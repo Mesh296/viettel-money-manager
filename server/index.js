@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv')
 const db = require('./src/providers/db.js');
-const sequelize = require('./src/providers/db.js');
+const { sequelize } = require('./src/models/index.js')
 
 const app = express();
 app.use(cors());
