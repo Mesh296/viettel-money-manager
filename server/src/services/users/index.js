@@ -1,11 +1,11 @@
 const { User } = require('../../models')
 const { Sequelize } = require('sequelize');
-const checkPassword = require('../../../utils/checkPassword')
+const checkPassword = require('../../utils/checkPassword')
 const { Secret, JwtPayLoad } = require('jsonwebtoken')
 const jwt = require('jsonwebtoken')
 const dotenv = require('dotenv').config()
 const bcrypt = require('bcrypt')
-const refreshTokenService = require('../auth/index.js')
+const refreshTokenService = require('../auth')
 
 if (!process.env.SECRET_KEY) {
     throw new Error('Missing SECRET_KEY in environment variables');
@@ -20,7 +20,7 @@ const register = async(userData) => {
 
         const existingUser = await User.findOne({
             where: {
-                [Sequelize.Op.or]: [{ email: userData.email }, { username: userData.username }]
+                [Sequelize.Op.or]: [{ email: userData.email }]
             }
         });
         if (existingUser) {
@@ -33,11 +33,12 @@ const register = async(userData) => {
     }
 }
 
-const login = async(username, password) => {
+const login = async(email, password) => {
+    console.log(email, password)
     try {
         const user = await User.findOne({
             where: {
-                [Sequelize.Op.or]: [{ username: username }]
+                [Sequelize.Op.or]: [{ email: email }]
             }
         })
 
@@ -45,6 +46,7 @@ const login = async(username, password) => {
             throw new Error('User does not exist')
         }
         const refreshToken = await refreshTokenService.generateRefreshToken(user)
+        console.log('refreshToken: ', refreshToken)
         const token = jwt.sign({id: user.id?.toString()}, SECRET_KEY, {expiresIn: '2 days'})
         return { refreshToken: refreshToken, token: token}
     } catch (error) {
