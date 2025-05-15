@@ -1,11 +1,11 @@
-const { User } = require('../../models')
+const { User } = require('../../models');
 const { Sequelize } = require('sequelize');
-const checkPassword = require('../../utils/checkPassword')
-const { Secret, JwtPayLoad } = require('jsonwebtoken')
-const jwt = require('jsonwebtoken')
-const dotenv = require('dotenv').config()
-const bcrypt = require('bcrypt')
-const refreshTokenService = require('../auth')
+const checkPassword = require('../../utils/checkPassword');
+const { Secret, JwtPayLoad } = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv').config();
+const bcrypt = require('bcrypt');
+const refreshTokenService = require('../auth');
 
 if (!process.env.SECRET_KEY) {
     throw new Error('Missing SECRET_KEY in environment variables');
