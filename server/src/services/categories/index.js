@@ -7,7 +7,7 @@ const create = async (name) => {
             throw new Error('Category name must be a non-empty string');
         }
 
-        const existingCategory = await findOne({
+        const existingCategory = await Category.findOne({
             where: {
                 name: name
             }
@@ -47,6 +47,7 @@ const getById = async(categoryId) => {
 
 const deleteCategory = async(categoryId) => {
     try {
+        console.log(categoryId)
         await Category.destroy({where: {id: categoryId}})
     } catch (error) {
         throw new Error(error.message);
