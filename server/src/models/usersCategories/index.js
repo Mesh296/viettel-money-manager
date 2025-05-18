@@ -8,6 +8,13 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
+        },
+        budget_limit: {
+            type: DataTypes.FLOAT,
+            defaultValue: 0.0,
+            validate: {
+                min: 0,
+            },
         }
     });
     return UserCategory;
