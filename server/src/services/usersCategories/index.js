@@ -1,12 +1,12 @@
 const { UserCategory, User, Category } = require('../../models');
 const { Sequelize } = require('sequelize');
 
-const create = async (userId, categoryId, budget_limit) => {
+const create = async (userId, categoryId, budget_limit, month) => {
     try {
-        if (!userId || !categoryId || typeof budget_limit !== 'number' || budget_limit < 0) {
-            throw new Error('Valid userId, categoryId, and non-negative budget_limit are required');
+        if (!userId || !categoryId || typeof budget_limit !== 'number' || !month) {
+            throw new Error('Valid userId, categoryId, budget_limit (number), and month (e.g., "May 2025") are required');
         }
-
+        console.log("here")
         // Check if user and category exist
         const user = await User.findByPk(userId);
         const category = await Category.findByPk(categoryId);
@@ -22,19 +22,21 @@ const create = async (userId, categoryId, budget_limit) => {
             where: {
                 userId,
                 categoryId,
+                month,
             },
         });
 
         if (existingUserCategory) {
-            throw new Error('User already assigned to this category');
+            throw new Error(`User already assigned to this category in month ${month}`);
         }
 
-        const userCategory = await UserCategory.create({ userId, categoryId, budget_limit });
+        const userCategory = await UserCategory.create({ userId, categoryId, budget_limit, month });
         return userCategory;
     } catch (error) {
         throw new Error(error.message || 'Error creating user category');
     }
 };
+
 
 const getAll = async () => {
     try {
@@ -68,18 +70,36 @@ const getById = async (id) => {
     }
 };
 
-const update = async (id, budget_limit) => {
+const getCurrentUserCategories = async (currentUserId) => {
+    try {
+        const userCategories = await UserCategory.findAll({
+            where: { userId: currentUserId },
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'email'] },
+                { model: Category, as: 'category', attributes: ['id', 'name'] },
+            ],
+        })
+        return userCategories;
+    } catch (error) {
+        throw new Error(error.message || 'Error fetching user category');
+    }
+}
+
+const update = async (id, budget_limit, month) => {
     try {
         const userCategory = await UserCategory.findByPk(id);
         if (!userCategory) {
             throw new Error('User category not found');
         }
 
-        if (typeof budget_limit !== 'number' || budget_limit < 0) {
-            throw new Error('Valid non-negative budget_limit is required');
+        if (month && !isValidMonthFormat(month)) {
+            throw new Error('Invalid month format: Expected e.g., "May 2025"');
         }
 
-        const [updated] = await UserCategory.update({ budget_limit }, { where: { id } });
+        const [updated] = await UserCategory.update(
+            { budget_limit, month },
+            { where: { id } }
+        );
         if (updated === 0) {
             throw new Error('Failed to update user category');
         }
@@ -111,4 +131,5 @@ module.exports = {
     getById,
     update,
     deleteUserCategory,
+    getCurrentUserCategories
 };

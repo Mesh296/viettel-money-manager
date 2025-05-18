@@ -12,10 +12,14 @@ module.exports = (sequelize) => {
         budget_limit: {
             type: DataTypes.FLOAT,
             defaultValue: 0.0,
+        },
+        month: {
+            type: DataTypes.STRING,
+            allowNull: false,
             validate: {
-                min: 0,
+                is: /^[A-Za-z]+ \d{4}$/, // Format: "Month YYYY" (e.g., "January 2025")
             },
-        }
+        },
     });
     return UserCategory;
 }

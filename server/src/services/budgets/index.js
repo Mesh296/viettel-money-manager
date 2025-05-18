@@ -58,9 +58,11 @@ const getById = async (budgetId) => {
     }
 };
 
-const update = async (budgetId, currentUserId, body) => {
+const update = async (currentUserId, body) => {
     try {
-        const existingBudget = await Budget.findByPk(budgetId);
+        const existingBudget = await Budget.findOne({
+            where: {month: body.month}
+        });
         if (!existingBudget) {
             throw new Error('Budget not found');
         }
@@ -69,11 +71,6 @@ const update = async (budgetId, currentUserId, body) => {
             throw new Error('Unauthorized: You can only update your own budgets');
         }
 
-        if (body.month) {
-            if (typeof body.month !== 'string' || !/^[A-Za-z]+ \d{4}$/.test(body.month)) {
-                throw new Error('Month must be a string in the format "Month YYYY" (e.g., "June 2025")');
-            }
-        }
 
         if (typeof body.budget !== 'number') {
             throw new Error('Budget must be a number');
@@ -83,13 +80,12 @@ const update = async (budgetId, currentUserId, body) => {
         }
 
 
-        const [updated] = await Budget.update(body, { where: { id: budgetId } });
+        const [updated] = await Budget.update(body, { where: {month: body.month} });
         if (updated === 0) {
             throw new Error('Failed to update budget');
         }
-
-        const updatedBudget = await getById(budgetId);
-        return updatedBudget;
+;
+        return "Budget updated";
     } catch (error) {
         throw new Error(error.message || 'Error updating budget');
     }

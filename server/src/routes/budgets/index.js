@@ -7,7 +7,7 @@ router.post('/create', auth, budgetController.create);
 router.get('/all', auth, budgetController.getAll);
 router.get('/current', auth, budgetController.getCurrentUserBudget); 
 router.get('/:id', auth, budgetController.getById);
-router.put('/update/:id', auth, budgetController.update);
+router.put('/update', auth, budgetController.update);
 router.delete('/delete/:id', auth, budgetController.deleteBudget);
 
 module.exports = router;

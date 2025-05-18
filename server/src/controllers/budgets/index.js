@@ -39,11 +39,9 @@ const getById = async (req, res) => {
 
 const update = async (req, res) => {
     try {
-        const { id } = req.params;
         const body = req.body;
         const currentUserId = req.user.id;
-        console.log(id)
-        const data = await budgetService.update(id, currentUserId, body);
+        const data = await budgetService.update(currentUserId, body);
         return res.status(200).json(data);
     } catch (error) {
         return res.status(400).json({
