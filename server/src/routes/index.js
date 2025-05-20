@@ -5,13 +5,14 @@ const categoryRoutes = require('./categories');
 const userCategoryRoutes = require('./usersCategories');
 const budgetRoutes = require('./budgets');
 const transactionRoutes = require('./transactions');
+const alertRoutes = require('./alerts');
 const router = express.Router();
-
 
 router.use('/users', userRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/users-categories', userCategoryRoutes);
 router.use('/budgets', budgetRoutes);
 router.use('/transactions', transactionRoutes);
+router.use('/alerts', alertRoutes);
 
 module.exports = router;

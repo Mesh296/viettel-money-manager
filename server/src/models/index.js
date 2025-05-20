@@ -49,4 +49,5 @@ module.exports = {
     UserCategory,
     Budget,
     Transaction,
+    Alert
 };
