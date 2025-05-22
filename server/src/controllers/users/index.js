@@ -25,6 +25,18 @@ const login = async (req, res) => {
     }
 }
 
+const getMe = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const data = await userService.getMe(userId);
+        return res.status(201).json(data);
+    } catch (error) {
+        return res.status(400).json({
+            message: error.message || 'Error fetching user'
+        });
+    }
+}
+
 const getAll = async (req, res) => {
     try {
         const data = await userService.getAll();
@@ -52,5 +64,6 @@ module.exports = {
     register,
     login,
     getAll,
-    deleteUser
+    deleteUser,
+    getMe
 }
