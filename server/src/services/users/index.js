@@ -54,6 +54,14 @@ const login = async(email, password) => {
     }
 }
 
+const getMe = async(userId) => {
+    try {
+        const user = await User.findByPk(userId)
+        return user
+    } catch (error) {
+        throw new Error(error.message)
+    }
+}
 const getAll = async() => {
     try {
         const users = await User.findAll();
@@ -107,4 +115,4 @@ const deleteUser = async(userId) => {
     }
 }
 
-module.exports = { register, getAll, login, getById, updateUser, deleteUser };
+module.exports = { register, getAll, login, getById, updateUser, deleteUser, getMe };
