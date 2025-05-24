@@ -187,17 +187,24 @@ const deleteTransaction = async (transactionId) => {
 };
 
 // Lấy thống kê tổng thu nhập, tổng chi tiêu và số dư
-const getSummaryStats = async (userId, startDate = null, endDate = null) => {
+const getSummaryStats = async (userId, month = null, year = null) => {
     try {
-        let whereClause = { userId };
+        // Mặc định sử dụng tháng và năm hiện tại nếu không được cung cấp
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) - 1 : currentDate.getMonth(); // Chuyển từ 1-12 sang 0-11
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+        
+        // Tạo ngày đầu tháng và cuối tháng
+        const startDate = new Date(targetYear, targetMonth, 1); // Ngày đầu tháng
+        const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate(); // Lấy ngày cuối cùng của tháng
+        const endDate = new Date(targetYear, targetMonth, lastDayOfMonth, 23, 59, 59); // 23:59:59 ngày cuối tháng
 
-        if (startDate && endDate) {
-            const start = parseDate(startDate);
-            const end = parseDate(endDate);
-            whereClause.date = {
-                [Sequelize.Op.between]: [start, end]
-            };
-        }
+        const whereClause = { 
+            userId,
+            date: {
+                [Sequelize.Op.between]: [startDate, endDate]
+            }
+        };
 
         const transactions = await Transaction.findAll({
             where: whereClause,
@@ -219,7 +226,13 @@ const getSummaryStats = async (userId, startDate = null, endDate = null) => {
             }
         });
 
+        // Lấy thông tin tháng
+        const monthName = new Date(targetYear, targetMonth).toLocaleString('vi-VN', { month: 'long' });
+
         return {
+            month: targetMonth + 1,
+            year: targetYear,
+            monthName,
             totalIncome,
             totalExpense,
             balance: totalIncome - totalExpense
@@ -230,73 +243,132 @@ const getSummaryStats = async (userId, startDate = null, endDate = null) => {
 };
 
 // Lấy dữ liệu thu nhập và chi tiêu theo tháng cho biểu đồ cột/thanh
-const getMonthlyStats = async (userId, year = new Date().getFullYear()) => {
+const getMonthlyStats = async (userId, month = null, year = null) => {
     try {
-        // Chuyển năm thành số nếu là chuỗi
-        year = parseInt(year);
+        // Mặc định sử dụng tháng và năm hiện tại nếu không được cung cấp
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) - 1 : currentDate.getMonth(); // Chuyển từ 1-12 sang 0-11
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
         
-        // Tạo startDate và endDate cho năm được chọn
-        const startDate = new Date(year, 0, 1); // 1/1/year
-        const endDate = new Date(year, 11, 31, 23, 59, 59); // 31/12/year
+        // Tạo ngày đầu tháng và cuối tháng
+        const startDate = new Date(targetYear, targetMonth, 1); // Ngày đầu tháng
+        const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate(); // Lấy ngày cuối cùng của tháng
+        const endDate = new Date(targetYear, targetMonth, lastDayOfMonth, 23, 59, 59); // 23:59:59 ngày cuối tháng
         
+        // Lấy tất cả giao dịch trong tháng
         const transactions = await Transaction.findAll({
             where: {
                 userId,
                 date: {
                     [Sequelize.Op.between]: [startDate, endDate]
                 }
-            }
+            },
+            include: [
+                { model: Category, as: 'category', attributes: ['id', 'name'] }
+            ]
         });
         
-        // Khởi tạo dữ liệu cho 12 tháng
-        const monthlyData = Array(12).fill().map(() => ({ 
-            income: 0, 
-            expense: 0 
-        }));
+        // Tính toán tổng thu nhập và chi tiêu
+        let totalIncome = 0;
+        let totalExpense = 0;
+        const categoryStats = new Map(); // Dùng để theo dõi chi tiêu theo danh mục
         
-        // Tổng hợp dữ liệu theo tháng
         transactions.forEach(transaction => {
-            const month = transaction.date.getMonth(); // 0-11
+            const amount = parseFloat(transaction.amount);
             if (transaction.type === 'income') {
-                monthlyData[month].income += parseFloat(transaction.amount);
-            } else {
-                monthlyData[month].expense += parseFloat(transaction.amount);
+                totalIncome += amount;
+            } else if (transaction.type === 'expense') {
+                totalExpense += amount;
+                
+                // Thêm vào thống kê theo danh mục
+                const categoryId = transaction.categoryId;
+                const categoryName = transaction.category ? transaction.category.name : 'Không xác định';
+                
+                if (!categoryStats.has(categoryId)) {
+                    categoryStats.set(categoryId, {
+                        categoryId,
+                        categoryName,
+                        amount: 0
+                    });
+                }
+                
+                const categoryStat = categoryStats.get(categoryId);
+                categoryStat.amount += amount;
             }
         });
         
-        // Định dạng dữ liệu kết quả
-        const result = monthlyData.map((data, index) => ({
-            month: index + 1, // 1-12
-            monthName: new Date(year, index).toLocaleString('vi-VN', { month: 'long' }),
-            income: data.income,
-            expense: data.expense,
-            balance: data.income - data.expense
-        }));
+        // Định dạng thông tin thống kê
+        const monthName = new Date(targetYear, targetMonth).toLocaleString('vi-VN', { month: 'long' });
         
-        return result;
+        // Chuyển Map thành mảng và tính phần trăm từng danh mục
+        const categoriesData = Array.from(categoryStats.values());
+        categoriesData.forEach(category => {
+            category.percentage = totalExpense ? ((category.amount / totalExpense) * 100).toFixed(2) : 0;
+        });
+        
+        // Sắp xếp danh mục theo chi tiêu giảm dần
+        categoriesData.sort((a, b) => b.amount - a.amount);
+        
+        return {
+            month: targetMonth + 1, // Chuyển về định dạng 1-12
+            year: targetYear,
+            monthName,
+            income: totalIncome,
+            expense: totalExpense,
+            balance: totalIncome - totalExpense,
+            categories: categoriesData,
+            daily: getDailyStats(transactions, targetYear, targetMonth)
+        };
     } catch (error) {
         throw new Error(error.message || 'Error getting monthly statistics');
     }
 };
 
-// Lấy tỷ lệ chi tiêu theo danh mục cho biểu đồ tròn
-const getCategorySpendingStats = async (userId, startDate = null, endDate = null) => {
-    try {
-        let whereClause = { 
-            userId,
-            type: 'expense'
-        };
-
-        if (startDate && endDate) {
-            const start = parseDate(startDate);
-            const end = parseDate(endDate);
-            whereClause.date = {
-                [Sequelize.Op.between]: [start, end]
-            };
+// Hàm hỗ trợ để tính thống kê theo ngày trong tháng
+const getDailyStats = (transactions, year, month) => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const dailyStats = Array(lastDay).fill().map((_, i) => ({
+        day: i + 1,
+        income: 0,
+        expense: 0
+    }));
+    
+    transactions.forEach(transaction => {
+        const day = transaction.date.getDate() - 1; // Chuyển từ 1-31 sang 0-30
+        const amount = parseFloat(transaction.amount);
+        
+        if (transaction.type === 'income') {
+            dailyStats[day].income += amount;
+        } else if (transaction.type === 'expense') {
+            dailyStats[day].expense += amount;
         }
+    });
+    
+    return dailyStats;
+};
 
+// Lấy tỷ lệ chi tiêu theo danh mục cho biểu đồ tròn
+const getCategorySpendingStats = async (userId, month = null, year = null) => {
+    try {
+        // Mặc định sử dụng tháng và năm hiện tại nếu không được cung cấp
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) - 1 : currentDate.getMonth(); // Chuyển từ 1-12 sang 0-11
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+        
+        // Tạo ngày đầu tháng và cuối tháng
+        const startDate = new Date(targetYear, targetMonth, 1); // Ngày đầu tháng
+        const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate(); // Lấy ngày cuối cùng của tháng
+        const endDate = new Date(targetYear, targetMonth, lastDayOfMonth, 23, 59, 59); // 23:59:59 ngày cuối tháng
+        
+        // Tìm tất cả các giao dịch chi tiêu trong tháng được chọn
         const categorySpending = await Transaction.findAll({
-            where: whereClause,
+            where: {
+                userId,
+                type: 'expense',
+                date: {
+                    [Sequelize.Op.between]: [startDate, endDate]
+                }
+            },
             include: [
                 { model: Category, as: 'category', attributes: ['id', 'name'] }
             ],
@@ -313,16 +385,25 @@ const getCategorySpendingStats = async (userId, startDate = null, endDate = null
         }, 0);
 
         // Định dạng kết quả với phần trăm
-        const result = categorySpending.map(category => ({
+        const categories = categorySpending.map(category => ({
             categoryId: category.categoryId,
             categoryName: category.category.name,
             amount: parseFloat(category.getDataValue('total') || 0),
             percentage: totalSpending ? (parseFloat(category.getDataValue('total') || 0) / totalSpending * 100).toFixed(2) : 0
         }));
 
+        // Sắp xếp danh mục theo mức chi tiêu giảm dần
+        categories.sort((a, b) => b.amount - a.amount);
+        
+        // Lấy thông tin tháng
+        const monthName = new Date(targetYear, targetMonth).toLocaleString('vi-VN', { month: 'long' });
+
         return {
+            month: targetMonth + 1,
+            year: targetYear,
+            monthName,
             totalSpending,
-            categories: result
+            categories
         };
     } catch (error) {
         throw new Error(error.message || 'Error getting category spending statistics');

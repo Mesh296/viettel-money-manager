@@ -6,9 +6,9 @@ const budgetService = require('../../services/budgets');
 const getSummary = async (req, res) => {
     try {
         const currentUserId = req.user.id;
-        const { startDate, endDate } = req.query;
+        const { month, year } = req.query;
         
-        const data = await transactionService.getSummaryStats(currentUserId, startDate, endDate);
+        const data = await transactionService.getSummaryStats(currentUserId, month, year);
         return res.status(200).json(data);
     } catch (error) {
         return res.status(400).json({
@@ -21,9 +21,9 @@ const getSummary = async (req, res) => {
 const getMonthlyData = async (req, res) => {
     try {
         const currentUserId = req.user.id;
-        const { year } = req.query;
+        const { month, year } = req.query;
         
-        const data = await transactionService.getMonthlyStats(currentUserId, year);
+        const data = await transactionService.getMonthlyStats(currentUserId, month, year);
         return res.status(200).json(data);
     } catch (error) {
         return res.status(400).json({
@@ -36,9 +36,9 @@ const getMonthlyData = async (req, res) => {
 const getCategorySpending = async (req, res) => {
     try {
         const currentUserId = req.user.id;
-        const { startDate, endDate } = req.query;
+        const { month, year } = req.query;
         
-        const data = await transactionService.getCategorySpendingStats(currentUserId, startDate, endDate);
+        const data = await transactionService.getCategorySpendingStats(currentUserId, month, year);
         return res.status(200).json(data);
     } catch (error) {
         return res.status(400).json({
