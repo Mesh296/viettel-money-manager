@@ -49,6 +49,26 @@ const getById = async (req, res) => {
     }
 };
 
+const updateTransaction = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { categoryId, type, amount, date, note } = req.body;
+        const currentUserId = req.user.id;
+        
+        const data = await transactionService.updateTransaction(
+            id, 
+            currentUserId, 
+            { categoryId, type, amount, date, note }
+        );
+        
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(400).json({
+            message: error.message || 'Error updating transaction',
+        });
+    }
+};
+
 const deleteTransaction = async (req, res) => {
     try {
         const { id } = req.params;
@@ -61,10 +81,54 @@ const deleteTransaction = async (req, res) => {
     }
 };
 
+const searchTransactions = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const { 
+            startDate, 
+            endDate, 
+            type, 
+            categoryId, 
+            minAmount, 
+            maxAmount,
+            keyword,
+            sortBy, 
+            sortOrder,
+            page,
+            limit
+        } = req.query;
+        
+        const data = await transactionService.searchTransactions(
+            currentUserId,
+            { 
+                startDate, 
+                endDate, 
+                type, 
+                categoryId, 
+                minAmount, 
+                maxAmount,
+                keyword,
+                sortBy, 
+                sortOrder,
+                page: parseInt(page) || 1,
+                limit: parseInt(limit) || 10
+            }
+        );
+        
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(400).json({
+            message: error.message || 'Error searching transactions',
+        });
+    }
+};
+
 module.exports = {
     create,
     getAll,
     getById,
     deleteTransaction,
-    getAllUserTransactions
+    getAllUserTransactions,
+    updateTransaction,
+    searchTransactions
 };
