@@ -23,7 +23,7 @@ const Transactions = () => {
           <div className="mb-6 p-4 bg-blue-50 rounded-md">
             <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý giao dịch</h2>
             <p className="text-gray-600">
-              Tại đây bạn có thể thêm mới, xem và xóa các giao dịch thu chi.
+              Tại đây bạn có thể thêm mới, tìm kiếm, chỉnh sửa và xóa các giao dịch thu chi.
             </p>
           </div>
           
@@ -36,6 +36,10 @@ const Transactions = () => {
           {/* Danh sách giao dịch */}
           <div className="border-t border-gray-200 pt-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Lịch sử giao dịch</h2>
+            <p className="text-gray-600 mb-4">
+              Bạn có thể tìm kiếm, lọc, chỉnh sửa hoặc xóa giao dịch bên dưới.
+              Sử dụng bộ lọc để tìm kiếm giao dịch theo thời gian, danh mục, loại hoặc từ khóa.
+            </p>
             <TransactionList refreshTrigger={refreshTrigger} />
           </div>
         </div>

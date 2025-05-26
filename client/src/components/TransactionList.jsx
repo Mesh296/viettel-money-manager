@@ -1,20 +1,45 @@
 import { useState, useEffect } from 'react';
-import { getCurrentUserTransactions, deleteTransaction } from '../services/transactions';
+import { getCurrentUserTransactions, deleteTransaction, searchTransactions } from '../services/transactions';
 import { toast } from 'react-toastify';
+import TransactionFilter from './TransactionFilter';
+import TransactionEdit from './TransactionEdit';
 
 const TransactionList = ({ refreshTrigger }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState(null);
   
   // Tải danh sách giao dịch
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
         setLoading(true);
-        const data = await getCurrentUserTransactions();
-        console.log('Transactions loaded:', data);
-        setTransactions(data);
+        
+        let response;
+        if (isFiltering && Object.keys(currentFilters).length > 0) {
+          // Nếu đang lọc, gọi API search
+          response = await searchTransactions(currentFilters);
+        } else {
+          // Nếu không, gọi API lấy tất cả giao dịch
+          response = await getCurrentUserTransactions();
+        }
+        
+        // Kiểm tra cấu trúc dữ liệu và xác định đúng mảng giao dịch
+        let transactionsData = [];
+        if (response && Array.isArray(response)) {
+          transactionsData = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          transactionsData = response.data;
+        } else {
+          console.warn('Unexpected response format:', response);
+          transactionsData = [];
+        }
+        
+        console.log('Transactions loaded:', response);
+        setTransactions(transactionsData);
         setError(null);
       } catch (error) {
         console.error('Error loading transactions:', error);
@@ -26,7 +51,18 @@ const TransactionList = ({ refreshTrigger }) => {
     };
     
     fetchTransactions();
-  }, [refreshTrigger]); // Tải lại khi refreshTrigger thay đổi
+  }, [refreshTrigger, currentFilters, isFiltering]);
+  
+  // Xử lý khi thay đổi bộ lọc
+  const handleFilterChange = (filterParams) => {
+    if (Object.keys(filterParams).length > 0) {
+      setIsFiltering(true);
+      setCurrentFilters(filterParams);
+    } else {
+      setIsFiltering(false);
+      setCurrentFilters({});
+    }
+  };
   
   // Xử lý xóa giao dịch
   const handleDelete = async (id) => {
@@ -38,6 +74,25 @@ const TransactionList = ({ refreshTrigger }) => {
       } catch (error) {
         toast.error(error.message || 'Có lỗi xảy ra khi xóa giao dịch');
       }
+    }
+  };
+  
+  // Mở modal chỉnh sửa giao dịch
+  const handleEdit = (id) => {
+    console.log('Opening edit modal for transaction ID:', id);
+    setEditingTransactionId(id);
+  };
+  
+  // Xử lý khi giao dịch đã được cập nhật
+  const handleTransactionUpdated = () => {
+    // Tải lại danh sách giao dịch
+    if (isFiltering) {
+      // Nếu đang lọc, áp dụng lại bộ lọc hiện tại
+      handleFilterChange(currentFilters);
+    } else {
+      // Nếu không, tải lại tất cả
+      setCurrentFilters({});
+      setIsFiltering(false);
     }
   };
   
@@ -96,98 +151,157 @@ const TransactionList = ({ refreshTrigger }) => {
     }
   };
   
+  // Render bộ lọc
+  const renderFilter = () => {
+    return <TransactionFilter onFilterChange={handleFilterChange} />;
+  };
+  
+  // Render thông báo nếu đang lọc
+  const renderFilterNotification = () => {
+    if (isFiltering) {
+      return (
+        <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md flex justify-between items-center">
+          <span className="text-sm text-blue-700">
+            <span className="font-medium">Đang lọc:</span> {Object.keys(currentFilters).length} điều kiện được áp dụng
+          </span>
+          <button
+            onClick={() => handleFilterChange({})}
+            className="text-sm text-blue-700 hover:text-blue-900 underline"
+          >
+            Xóa bộ lọc
+          </button>
+        </div>
+      );
+    }
+    return null;
+  };
+  
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-3">Đang tải dữ liệu...</span>
+      <div>
+        {renderFilter()}
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <span className="ml-3">Đang tải dữ liệu...</span>
+        </div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        <p>{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-2 text-red-700 underline"
-        >
-          Thử lại
-        </button>
+      <div>
+        {renderFilter()}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 text-red-700 underline"
+          >
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
   
   if (transactions.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-8 rounded text-center">
-        <p>Bạn chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!</p>
+      <div>
+        {renderFilter()}
+        {renderFilterNotification()}
+        <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-8 rounded text-center">
+          <p>
+            {isFiltering 
+              ? 'Không tìm thấy giao dịch nào khớp với điều kiện lọc.' 
+              : 'Bạn chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!'}
+          </p>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Ngày
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Danh mục
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Loại
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Số tiền
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Ghi chú
-            </th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Thao tác
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {transactions.map((transaction) => (
-            <tr key={transaction.transactionId}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {formatDate(transaction.date)}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {transaction.category?.name || 'N/A'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {transaction.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
-                </span>
-              </td>
-              <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {formatAmount(transaction.amount)}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                {transaction.note || ''}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button 
-                  onClick={() => handleDelete(transaction.transactionId)}
-                  className="text-red-600 hover:text-red-900 ml-2"
-                >
-                  Xóa
-                </button>
-              </td>
+    <div>
+      {renderFilter()}
+      {renderFilterNotification()}
+      
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ngày
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Danh mục
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Loại
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Số tiền
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ghi chú
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Thao tác
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {transactions.map((transaction) => (
+              <tr key={transaction.id || transaction.transactionId}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatDate(transaction.date)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {transaction.category?.name || 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {transaction.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
+                  </span>
+                </td>
+                <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {formatAmount(transaction.amount)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                  {transaction.note || ''}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button 
+                    onClick={() => handleEdit(transaction.id || transaction.transactionId)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    Sửa
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(transaction.id || transaction.transactionId)}
+                    className="text-red-600 hover:text-red-900 ml-2"
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Modal chỉnh sửa giao dịch */}
+      {editingTransactionId && (
+        <TransactionEdit
+          transactionId={editingTransactionId}
+          onClose={() => setEditingTransactionId(null)}
+          onTransactionUpdated={handleTransactionUpdated}
+        />
+      )}
     </div>
   );
 };

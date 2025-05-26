@@ -40,9 +40,12 @@ const getAllUserTransactions = async (req, res) => {
 const getById = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('Getting transaction by ID:', id);
         const data = await transactionService.getById(id);
+        console.log('Transaction found:', data);
         return res.status(200).json(data);
     } catch (error) {
+        console.error('Error in getById controller:', error);
         return res.status(400).json({
             message: error.message || 'Error fetching transaction',
         });
@@ -55,14 +58,19 @@ const updateTransaction = async (req, res) => {
         const { categoryId, type, amount, date, note } = req.body;
         const currentUserId = req.user.id;
         
+        console.log('Updating transaction ID:', id);
+        console.log('Update data:', { categoryId, type, amount, date, note });
+        
         const data = await transactionService.updateTransaction(
             id, 
             currentUserId, 
             { categoryId, type, amount, date, note }
         );
         
+        console.log('Update successful, returning:', data);
         return res.status(200).json(data);
     } catch (error) {
+        console.error('Error in updateTransaction controller:', error);
         return res.status(400).json({
             message: error.message || 'Error updating transaction',
         });

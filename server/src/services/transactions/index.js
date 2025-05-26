@@ -2,17 +2,28 @@ const { Transaction, UserCategory, Budget, User, Category } = require('../../mod
 const { Sequelize } = require('sequelize');
 
 const parseDate = (dateString) => {
-    if (!dateString) return new Date(); // Default to current date if not provided
+    console.log('parseDate called with:', dateString);
+    if (!dateString) {
+        console.log('No date provided, returning current date');
+        return new Date(); // Default to current date if not provided
+    }
+    
     const [day, month, year] = dateString.split('-').map(Number);
-    console.log(dateString)
-    console.log(day, month, year)
+    console.log('Parsed date parts:', { day, month, year });
+    
     if (!day || !month || !year || day > 31 || month > 12 || year < 1900 || year > 2100) {
+        console.error('Invalid date format:', dateString);
         throw new Error('Invalid date format: Expected DD-MM-YYYY, year between 1900 and 2100');
     }
+    
     const date = new Date(year, month - 1, day); // month is 0-based in JavaScript
+    console.log('Created Date object:', date);
+    
     if (isNaN(date.getTime())) {
+        console.error('Invalid date, cannot parse:', dateString);
         throw new Error('Invalid date: Unable to parse date');
     }
+    
     return date;
 };
 
@@ -128,23 +139,28 @@ const getAllUserTransactions = async (currentUserId) => {
 
 const getById = async (transactionId) => {
     try {
+        console.log('Service getById called with ID:', transactionId);
         const transaction = await Transaction.findByPk(transactionId, {
             include: [
                 { model: User, as: 'user', attributes: ['id', 'email'] },
                 { model: Category, as: 'category', attributes: ['id', 'name'] },
             ],
         });
+        console.log('Transaction found in database:', transaction ? 'Yes' : 'No');
         if (!transaction) {
             throw new Error('Transaction not found');
         }
         return transaction;
     } catch (error) {
+        console.error('Error in getById service:', error);
         throw new Error(error.message || 'Error fetching transaction');
     }
 };
 
 const deleteTransaction = async (transactionId) => {
     try {
+
+        console.log("transactionId: ", transactionId)
         const transaction = await Transaction.findByPk(transactionId);
         if (!transaction) {
             throw new Error('Transaction not found');
@@ -179,7 +195,7 @@ const deleteTransaction = async (transactionId) => {
             }
         }
 
-        await Transaction.destroy({ where: { transactionId } });
+        await Transaction.destroy({ where: { transactionId: transactionId } });
         return { message: 'Transaction deleted successfully' };
     } catch (error) {
         throw new Error(error.message || 'Error deleting transaction');
@@ -495,10 +511,12 @@ const getIncomeExpenseComparisonStats = async (userId, period = 'month', count =
 // Cập nhật giao dịch
 const updateTransaction = async (transactionId, userId, updateData) => {
     try {
+        console.log('Service updateTransaction called with ID:', transactionId, 'userId:', userId);
         const transaction = await Transaction.findOne({
             where: { id: transactionId, userId }
         });
 
+        console.log('Transaction found for update:', transaction ? 'Yes' : 'No');
         if (!transaction) {
             throw new Error('Transaction not found or you do not have permission to update');
         }
@@ -515,11 +533,21 @@ const updateTransaction = async (transactionId, userId, updateData) => {
         let updatedDate = originalDate;
         
         if (date) {
+            console.log('Parsing date for update:', date);
             updatedDate = parseDate(date);
+            console.log('Parsed date:', updatedDate);
         }
         
         const updatedMonth = updatedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
         const monthChanged = originalMonth !== updatedMonth;
+
+        console.log('Updating transaction with data:', {
+            categoryId: categoryId || transaction.categoryId,
+            type: type || transaction.type,
+            amount: amount !== undefined ? amount : transaction.amount,
+            date: updatedDate,
+            note: note !== undefined ? note : transaction.note
+        });
 
         // Thực hiện cập nhật
         await transaction.update({
@@ -537,6 +565,7 @@ const updateTransaction = async (transactionId, userId, updateData) => {
         // 4. Tháng thay đổi -> hoàn lại budget cũ, tạo budget mới
 
         if (type !== originalType || amount !== originalAmount || categoryId !== originalCategoryId || monthChanged) {
+            console.log('Budget needs updating due to changes in transaction');
             // Hoàn lại giá trị ban đầu
             if (originalType === 'expense') {
                 // Nếu là chi tiêu, hoàn lại số tiền
@@ -569,6 +598,7 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             
             // Kiểm tra xem đã có UserCategory và Budget cho tháng mới chưa
             if (monthChanged) {
+                console.log('Month changed, checking for UserCategory and Budget');
                 let userCategory = await UserCategory.findOne({ 
                     where: { userId, categoryId: newCategoryId, month: updatedMonth } 
                 });
@@ -619,9 +649,11 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             }
         }
 
+        console.log('Transaction updated successfully');
         // Trả về giao dịch đã cập nhật
         return transaction;
     } catch (error) {
+        console.error('Error in updateTransaction service:', error);
         throw new Error(error.message || 'Error updating transaction');
     }
 };
@@ -647,30 +679,32 @@ const searchTransactions = async (userId, options) => {
         let whereClause = { userId };
         
         // Lọc theo ngày
-        if (startDate && endDate) {
-            const start = parseDate(startDate);
-            const end = parseDate(endDate);
-            whereClause.date = {
-                [Sequelize.Op.between]: [start, end]
-            };
-        } else if (startDate) {
-            whereClause.date = {
-                [Sequelize.Op.gte]: parseDate(startDate)
-            };
-        } else if (endDate) {
-            whereClause.date = {
-                [Sequelize.Op.lte]: parseDate(endDate)
-            };
+        if (startDate || endDate) {
+            whereClause.date = {};
+            
+            if (startDate) {
+                try {
+                    const start = parseDate(startDate);
+                    whereClause.date[Sequelize.Op.gte] = start;
+                } catch (error) {
+                    console.error('Start date parsing error:', error.message);
+                }
+            }
+            
+            if (endDate) {
+                try {
+                    const end = parseDate(endDate);
+                    end.setHours(23, 59, 59, 999); // Set to end of day
+                    whereClause.date[Sequelize.Op.lte] = end;
+                } catch (error) {
+                    console.error('End date parsing error:', error.message);
+                }
+            }
         }
         
         // Lọc theo loại giao dịch
         if (type && ['income', 'expense'].includes(type)) {
             whereClause.type = type;
-        }
-        
-        // Lọc theo danh mục
-        if (categoryId) {
-            whereClause.categoryId = categoryId;
         }
         
         // Lọc theo số tiền
@@ -700,16 +734,40 @@ const searchTransactions = async (userId, options) => {
         
         // Thực hiện phân trang
         const offset = (page - 1) * limit;
+
+        // Chuẩn bị include cho Category
+        const includes = [{
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name']
+        }];
+
+        // Xử lý tìm kiếm theo tên danh mục
+        if (categoryId) {
+            // Nếu categoryId là ID số
+            if (!isNaN(categoryId)) {
+                whereClause.categoryId = parseInt(categoryId);
+            } 
+            // Nếu categoryId là tên danh mục
+            else {
+                includes[0].where = {
+                    name: {
+                        [Sequelize.Op.like]: `%${categoryId}%`
+                    }
+                };
+            }
+        }
+        
+        console.log("Final whereClause:", JSON.stringify(whereClause, null, 2));
         
         // Thực hiện truy vấn
         const result = await Transaction.findAndCountAll({
             where: whereClause,
-            include: [
-                { model: Category, as: 'category', attributes: ['id', 'name'] }
-            ],
+            include: includes,
             order,
-            limit,
-            offset
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            distinct: true // Thêm distinct để đếm chính xác số lượng bản ghi
         });
         
         // Tính toán thông tin phân trang
@@ -721,11 +779,12 @@ const searchTransactions = async (userId, options) => {
             pagination: {
                 totalItems,
                 totalPages,
-                currentPage: page,
-                itemsPerPage: limit
+                currentPage: parseInt(page),
+                itemsPerPage: parseInt(limit)
             }
         };
     } catch (error) {
+        console.error('Search transaction error:', error);
         throw new Error(error.message || 'Error searching transactions');
     }
 };
