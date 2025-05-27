@@ -140,7 +140,8 @@ const getAllUserTransactions = async (currentUserId) => {
 const getById = async (transactionId) => {
     try {
         console.log('Service getById called with ID:', transactionId);
-        const transaction = await Transaction.findByPk(transactionId, {
+        const transaction = await Transaction.findOne({
+            where: { transactionId },
             include: [
                 { model: User, as: 'user', attributes: ['id', 'email'] },
                 { model: Category, as: 'category', attributes: ['id', 'name'] },
@@ -513,7 +514,7 @@ const updateTransaction = async (transactionId, userId, updateData) => {
     try {
         console.log('Service updateTransaction called with ID:', transactionId, 'userId:', userId);
         const transaction = await Transaction.findOne({
-            where: { id: transactionId, userId }
+            where: { transactionId, userId }
         });
 
         console.log('Transaction found for update:', transaction ? 'Yes' : 'No');
