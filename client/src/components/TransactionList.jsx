@@ -80,7 +80,16 @@ const TransactionList = ({ refreshTrigger }) => {
   // Mở modal chỉnh sửa giao dịch
   const handleEdit = (id) => {
     console.log('Opening edit modal for transaction ID:', id);
-    setEditingTransactionId(id);
+    // Đảm bảo ID không bị null
+    if (id) {
+      setEditingTransactionId(id);
+      // Debug cho người dùng
+      toast.info(`Đang mở modal chỉnh sửa cho giao dịch: ${id.substring(0, 8)}...`);
+      console.log('EditingTransactionId has been set to:', id);
+    } else {
+      console.error('Cannot open edit modal: Transaction ID is null or undefined');
+      toast.error('Không thể mở modal chỉnh sửa: ID giao dịch không hợp lệ');
+    }
   };
   
   // Xử lý khi giao dịch đã được cập nhật
@@ -276,7 +285,7 @@ const TransactionList = ({ refreshTrigger }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button 
-                    onClick={() => handleEdit(transaction.id || transaction.transactionId)}
+                    onClick={() => handleEdit(transaction.transactionId)}
                     className="text-blue-600 hover:text-blue-900"
                   >
                     Sửa
@@ -296,11 +305,21 @@ const TransactionList = ({ refreshTrigger }) => {
       
       {/* Modal chỉnh sửa giao dịch */}
       {editingTransactionId && (
-        <TransactionEdit
-          transactionId={editingTransactionId}
-          onClose={() => setEditingTransactionId(null)}
-          onTransactionUpdated={handleTransactionUpdated}
-        />
+        <>
+          {/* Thông báo debug hiển thị cho người dùng */}
+          <div className="fixed top-0 left-0 right-0 bg-yellow-200 p-4 mb-4 text-center z-[2000]">
+            Modal đang mở với ID: {editingTransactionId}
+          </div>
+          <TransactionEdit
+            key={`edit-transaction-${editingTransactionId}`}
+            transactionId={editingTransactionId}
+            onClose={() => {
+              console.log('Closing modal...');
+              setEditingTransactionId(null);
+            }}
+            onTransactionUpdated={handleTransactionUpdated}
+          />
+        </>
       )}
     </div>
   );

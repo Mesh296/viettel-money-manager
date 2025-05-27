@@ -72,17 +72,47 @@ export const getCurrentUserTransactions = async (options = {}) => {
 export const getTransactionById = async (transactionId) => {
   try {
     console.log('Getting transaction by ID:', transactionId);
+    if (!transactionId) {
+      console.error('No transaction ID provided to getTransactionById');
+      throw new Error('ID giao dịch không hợp lệ');
+    }
+    
     const token = getAuthToken();
+    if (!token) {
+      console.error('No auth token found');
+      throw new Error('Bạn cần đăng nhập lại');
+    }
+    
     const response = await axios.get(`${API_URL}/transactions/${transactionId}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
-    console.log('Transaction data received:', response.data);
-    return response.data;
+    
+    console.log('Transaction data received from server:', response);
+    
+    if (response && response.data) {
+      return response.data;
+    } else {
+      console.error('Invalid response structure from server:', response);
+      throw new Error('Dữ liệu giao dịch không hợp lệ');
+    }
   } catch (error) {
     console.error('API error in getTransactionById:', error.response || error);
-    throw error.response?.data || { message: 'Có lỗi xảy ra khi tải giao dịch' };
+    
+    // Xử lý lỗi chi tiết hơn
+    if (error.response) {
+      // Server trả về lỗi có status code
+      if (error.response.status === 404) {
+        throw { message: 'Không tìm thấy giao dịch này' };
+      } else if (error.response.status === 403) {
+        throw { message: 'Bạn không có quyền xem giao dịch này' };
+      } else if (error.response.data && error.response.data.message) {
+        throw error.response.data;
+      }
+    }
+    
+    throw { message: error.message || 'Có lỗi xảy ra khi tải giao dịch' };
   }
 };
 
@@ -145,9 +175,13 @@ export const updateTransaction = async (transactionId, updateData) => {
   try {
     const token = getAuthToken();
     
+    if (!updateData.categoryId) {
+      throw new Error('ID danh mục không được để trống');
+    }
+    
     // Đảm bảo dữ liệu đúng format mà API yêu cầu
     const formattedData = {
-      categoryId: updateData.categoryId,
+      categoryId: updateData.categoryId, // Phải là UUID, không phải tên danh mục
       type: updateData.type,
       amount: parseFloat(updateData.amount),
       date: updateData.date,
@@ -156,6 +190,13 @@ export const updateTransaction = async (transactionId, updateData) => {
     
     console.log('Updating transaction ID:', transactionId);
     console.log('Update data for API:', formattedData);
+    
+    // Kiểm tra categoryId có phải là UUID không
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(formattedData.categoryId)) {
+      console.error('Invalid categoryId format, expected UUID but got:', formattedData.categoryId);
+      throw new Error('ID danh mục không hợp lệ');
+    }
     
     const response = await axios.put(`${API_URL}/transactions/update/${transactionId}`, formattedData, {
       headers: {
@@ -166,6 +207,6 @@ export const updateTransaction = async (transactionId, updateData) => {
     return response.data;
   } catch (error) {
     console.error('API error in updateTransaction:', error.response || error);
-    throw error.response?.data || { message: 'Có lỗi xảy ra khi cập nhật giao dịch' };
+    throw error.response?.data || { message: error.message || 'Có lỗi xảy ra khi cập nhật giao dịch' };
   }
 }; 

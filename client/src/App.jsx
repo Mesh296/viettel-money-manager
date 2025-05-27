@@ -16,6 +16,8 @@ function App() {
     <Router>
       <AuthProvider>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+        {/* Modal Root Container */}
+        <div id="modal-root" className="relative z-[2000]"></div>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
