@@ -73,34 +73,34 @@ const create = async (currentUserId, categoryId, type, amount, date = null, note
             note,
         });
 
-        if (type === 'expense') {
-            // Deduct the full amount from both budget_limit and budget, allowing negative values
-            const amountToDeductFromUserCategory = amount;
-            const amountToDeductFromBudget = amount;
+        // if (type === 'expense') {
+        //     // Deduct the full amount from both budget_limit and budget, allowing negative values
+        //     const amountToDeductFromUserCategory = amount;
+        //     const amountToDeductFromBudget = amount;
 
-            if (amountToDeductFromUserCategory > 0) {
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit - ${amountToDeductFromUserCategory}`) },
-                    { where: { userId: currentUserId, categoryId, month: transactionMonth } }
-                );
-            }
+        //     if (amountToDeductFromUserCategory > 0) {
+        //         await UserCategory.update(
+        //             { budget_limit: Sequelize.literal(`budget_limit - ${amountToDeductFromUserCategory}`) },
+        //             { where: { userId: currentUserId, categoryId, month: transactionMonth } }
+        //         );
+        //     }
 
-            if (amountToDeductFromBudget > 0) {
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget - ${amountToDeductFromBudget}`) },
-                    { where: { userId: currentUserId, month: transactionMonth } }
-                );
-            }
-        } else if (type === 'income') {
-            await UserCategory.update(
-                { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
-                { where: { userId: currentUserId, categoryId } }
-            );
-            await Budget.update(
-                { budget: Sequelize.literal(`budget + ${amount}`) },
-                { where: { userId: currentUserId, month: transactionMonth } }
-            );
-        }
+        //     if (amountToDeductFromBudget > 0) {
+        //         await Budget.update(
+        //             { budget: Sequelize.literal(`budget - ${amountToDeductFromBudget}`) },
+        //             { where: { userId: currentUserId, month: transactionMonth } }
+        //         );
+        //     }
+        // } else if (type === 'income') {
+        //     await UserCategory.update(
+        //         { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
+        //         { where: { userId: currentUserId, categoryId } }
+        //     );
+        //     await Budget.update(
+        //         { budget: Sequelize.literal(`budget + ${amount}`) },
+        //         { where: { userId: currentUserId, month: transactionMonth } }
+        //     );
+        // }
 
         return transaction;
     } catch (error) {
@@ -174,27 +174,27 @@ const deleteTransaction = async (transactionId) => {
         const userCategory = await UserCategory.findOne({ where: { userId, categoryId } });
         const budget = await Budget.findOne({ where: { userId, month: transactionMonth } });
 
-        if (userCategory && budget) {
-            if (type === 'expense') {
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
-                    { where: { userId, categoryId } }
-                );
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget + ${amount}`) },
-                    { where: { userId, month: transactionMonth } }
-                );
-            } else if (type === 'income') {
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit - ${amount}`) },
-                    { where: { userId, categoryId } }
-                );
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget - ${amount}`) },
-                    { where: { userId, month: transactionMonth } }
-                );
-            }
-        }
+        // if (userCategory && budget) {
+        //     if (type === 'expense') {
+        //         await UserCategory.update(
+        //             { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
+        //             { where: { userId, categoryId } }
+        //         );
+        //         await Budget.update(
+        //             { budget: Sequelize.literal(`budget + ${amount}`) },
+        //             { where: { userId, month: transactionMonth } }
+        //         );
+        //     } else if (type === 'income') {
+        //         await UserCategory.update(
+        //             { budget_limit: Sequelize.literal(`budget_limit - ${amount}`) },
+        //             { where: { userId, categoryId } }
+        //         );
+        //         await Budget.update(
+        //             { budget: Sequelize.literal(`budget - ${amount}`) },
+        //             { where: { userId, month: transactionMonth } }
+        //         );
+        //     }
+        // }
 
         await Transaction.destroy({ where: { transactionId: transactionId } });
         return { message: 'Transaction deleted successfully' };
@@ -634,7 +634,7 @@ const updateTransaction = async (transactionId, userId, updateData) => {
                 );
                 
                 await Budget.update(
-                    { budget: Sequelize.literal(`budget - ${newAmount}`) },
+                    { budget: Sequelize.literal(`budget`) },
                     { where: { userId, month: updatedMonth } }
                 );
             } else {
@@ -644,7 +644,7 @@ const updateTransaction = async (transactionId, userId, updateData) => {
                 );
                 
                 await Budget.update(
-                    { budget: Sequelize.literal(`budget + ${newAmount}`) },
+                    { budget: Sequelize.literal(`budget`) },
                     { where: { userId, month: updatedMonth } }
                 );
             }
