@@ -60,32 +60,54 @@ const getById = async (budgetId) => {
 
 const update = async (currentUserId, body) => {
     try {
-        const existingBudget = await Budget.findOne({
-            where: {month: body.month}
-        });
-        if (!existingBudget) {
-            throw new Error('Budget not found');
+        const { month, budget } = body;
+        
+        if (!month) {
+            throw new Error('Month is required');
+        }
+        
+        // Kiểm tra định dạng tháng
+        if (!/^[A-Za-z]+ \d{4}$/.test(month)) {
+            throw new Error('Invalid month format: Expected e.g., "May 2025"');
         }
 
-        if (existingBudget.userId !== currentUserId) {
-            throw new Error('Unauthorized: You can only update your own budgets');
-        }
-
-
-        if (typeof body.budget !== 'number') {
+        if (typeof budget !== 'number') {
             throw new Error('Budget must be a number');
         }
-        if (body.budget < 0) {
+        if (budget < 0) {
             throw new Error('Budget must be non-negative');
         }
 
+        // Tìm budget cho tháng cụ thể
+        const existingBudget = await Budget.findOne({
+            where: { userId: currentUserId, month: month }
+        });
+        
+        // Nếu không tìm thấy, tạo mới
+        if (!existingBudget) {
+            const newBudget = await Budget.create({ 
+                userId: currentUserId, 
+                month: month, 
+                budget: budget 
+            });
+            return newBudget;
+        }
 
-        const [updated] = await Budget.update(body, { where: {month: body.month} });
+        // Nếu tìm thấy, cập nhật
+        const [updated] = await Budget.update(
+            { budget: budget }, 
+            { where: { userId: currentUserId, month: month } }
+        );
+        
         if (updated === 0) {
             throw new Error('Failed to update budget');
         }
-;
-        return "Budget updated";
+
+        return {
+            message: "Budget updated successfully",
+            month: month,
+            budget: budget
+        };
     } catch (error) {
         throw new Error(error.message || 'Error updating budget');
     }
@@ -124,6 +146,31 @@ const getCurrentUserBudget = async (currentUserId) => {
     }
 };
 
+// Lấy ngân sách của người dùng theo tháng
+const getUserBudgetByMonth = async (userId, month) => {
+    try {
+        if (!month) {
+            throw new Error('Month is required');
+        }
+        
+        // Kiểm tra định dạng tháng
+        if (!/^[A-Za-z]+ \d{4}$/.test(month)) {
+            throw new Error('Invalid month format: Expected e.g., "May 2025"');
+        }
+        
+        const budget = await Budget.findOne({
+            where: { userId, month },
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'email'] },
+            ],
+        });
+        
+        return budget;
+    } catch (error) {
+        throw new Error(error.message || 'Error fetching budget by month');
+    }
+};
+
 module.exports = {
     create,
     getAll,
@@ -131,4 +178,5 @@ module.exports = {
     update,
     deleteBudget,
     getCurrentUserBudget,
+    getUserBudgetByMonth,
 };

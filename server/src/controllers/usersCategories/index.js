@@ -77,11 +77,32 @@ const deleteUserCategory = async (req, res) => {
     }
 };
 
+const getUserCategoriesByMonth = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const { month } = req.query;
+        
+        if (!month) {
+            return res.status(400).json({
+                message: 'Month query parameter is required'
+            });
+        }
+        
+        const data = await userCategoryService.getUserCategoriesByMonth(currentUserId, month);
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(400).json({
+            message: error.message || 'Error fetching user categories by month',
+        });
+    }
+};
+
 module.exports = {
     create,
     getAll,
     getById,
     update,
     deleteUserCategory,
-    getCurrentUserCategories
+    getCurrentUserCategories,
+    getUserCategoriesByMonth
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { createBudget, getCurrentBudget, setCategoryBudget, getCategoryBudgets, updateCategoryBudget } from '../services/budgets';
+import { createBudget, getCurrentBudget, setCategoryBudget, getCategoryBudgets, updateCategoryBudget, getBudgetByMonth, getCategoryBudgetsByMonth, updateBudgetForMonth, deleteCategoryBudget } from '../services/budgets';
 import { getAllCategories } from '../services/categories';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -19,11 +19,12 @@ const formatMonth = (monthNum, year = new Date().getFullYear()) => {
 };
 
 const Budgets = () => {
+  const currentDate = new Date();
   const [monthlyBudget, setMonthlyBudget] = useState({
     amount: 0,
     spent: 0,
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
+    month: currentDate.getMonth() + 1,
+    year: currentDate.getFullYear()
   });
   
   const [newBudgetAmount, setNewBudgetAmount] = useState('');
@@ -37,6 +38,22 @@ const Budgets = () => {
     totalIncome: 0,
     totalExpenses: 0
   });
+  
+  // State cho việc chọn tháng
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [isCurrentMonth, setIsCurrentMonth] = useState(true);
+  
+  // Tạo mảng năm từ năm hiện tại trở về 5 năm trước
+  const years = Array.from({ length: 6 }, (_, index) => currentDate.getFullYear() - index);
+  
+  // Hàm kiểm tra xem tháng được chọn có phải là tháng hiện tại không
+  const checkIsCurrentMonth = (month, year) => {
+    return (
+      month === currentDate.getMonth() + 1 && 
+      year === currentDate.getFullYear()
+    );
+  };
   
   // Format currency
   const formatCurrency = (amount) => {
@@ -62,12 +79,8 @@ const Budgets = () => {
   };
 
   // Get monthly summary data
-  const fetchMonthlySummary = async () => {
+  const fetchMonthlySummary = async (month, year) => {
     try {
-      // Get current month and year for statistics
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-      
       console.log(`Fetching statistics for month: ${month}, year: ${year}`);
       
       // Get monthly summary from the statistics endpoint
@@ -95,12 +108,8 @@ const Budgets = () => {
   };
 
   // Get category spending data
-  const fetchCategorySpending = async () => {
+  const fetchCategorySpending = async (month, year) => {
     try {
-      // Get current month and year for statistics
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-      
       // Get category spending from the statistics endpoint
       const response = await axios.get(`${API_URL}/statistics/category-spending`, {
         params: { month, year }
@@ -130,11 +139,8 @@ const Budgets = () => {
   };
   
   // Direct API call to fetch transaction summary by category
-  const fetchTransactionsByCategoryDirect = async () => {
+  const fetchTransactionsByCategoryDirect = async (month, year) => {
     try {
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-      
       // Get all transactions for the month
       const response = await axios.get(`${API_URL}/transactions/current`);
       console.log('All transactions API response:', response.data);
@@ -192,18 +198,55 @@ const Budgets = () => {
   };
   
   // Process budget data to ensure we have correct values
-  const processBudgetData = (budgetData) => {
-    if (!budgetData || !Array.isArray(budgetData) || budgetData.length === 0) {
+  const processBudgetData = (budgetData, targetMonth, targetYear) => {
+    // Kiểm tra nếu không có dữ liệu
+    if (!budgetData) {
       console.log('No budget data to process');
       return null;
     }
     
-    // Sort by createdAt date, most recent first
-    const sortedBudgets = [...budgetData].sort((a, b) => 
-      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    // Tạo chuỗi tháng để so sánh (tháng định dạng "Month YYYY")
+    const monthFormat = formatMonth(targetMonth, targetYear);
+    console.log('Looking for budget with month:', monthFormat);
+    
+    // Trường hợp API trả về một đối tượng đơn lẻ (từ by-month API)
+    if (!Array.isArray(budgetData)) {
+      console.log('Budget data is a single object:', budgetData);
+      // Kiểm tra xem đối tượng có đúng tháng không
+      if (budgetData.month === monthFormat) {
+        // Đảm bảo giá trị ngân sách là số dương
+        return {
+          ...budgetData,
+          budget: Math.abs(budgetData.budget || 0)
+        };
+      } else {
+        console.log('Single budget object does not match target month');
+        return null;
+      }
+    }
+    
+    // Trường hợp API trả về một mảng (từ current API)
+    if (budgetData.length === 0) {
+      console.log('Budget data array is empty');
+      return null;
+    }
+    
+    // Lọc budget theo tháng được chọn
+    const matchingBudgets = budgetData.filter(budget => budget.month === monthFormat);
+    
+    if (matchingBudgets.length === 0) {
+      console.log(`No budgets found for ${monthFormat}`);
+      return null;
+    }
+    
+    console.log(`Found ${matchingBudgets.length} budgets for ${monthFormat}:`, matchingBudgets);
+    
+    // Nếu có nhiều budget cho cùng một tháng, chọn cái mới nhất theo updatedAt
+    const sortedBudgets = [...matchingBudgets].sort((a, b) => 
+      new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0)
     );
     
-    console.log('Sorted budgets by date:', sortedBudgets);
+    console.log('Sorted matching budgets by date:', sortedBudgets);
     
     // Get the most recent budget
     const latestBudget = sortedBudgets[0];
@@ -216,21 +259,38 @@ const Budgets = () => {
   };
   
   // Process category budgets to handle negative values and ensure uniqueness
-  const processCategoryBudgets = (categoryBudgetsData) => {
-    if (!categoryBudgetsData || !Array.isArray(categoryBudgetsData)) {
+  const processCategoryBudgets = (categoryBudgetsData, targetMonth, targetYear) => {
+    // Kiểm tra nếu không có dữ liệu
+    if (!categoryBudgetsData) {
       return [];
     }
+    
+    // Tạo chuỗi tháng để so sánh (tháng định dạng "Month YYYY")
+    const monthFormat = formatMonth(targetMonth, targetYear);
+    console.log('Looking for category budgets with month:', monthFormat);
+    
+    // Đảm bảo dữ liệu là một mảng
+    const budgetsArray = Array.isArray(categoryBudgetsData) 
+      ? categoryBudgetsData 
+      : [categoryBudgetsData];
+    
+    // Lọc các budget theo tháng được chọn
+    const matchingBudgets = budgetsArray.filter(budget => 
+      budget && budget.month === monthFormat
+    );
+    
+    console.log(`Found ${matchingBudgets.length} category budgets for ${monthFormat}`);
     
     // Process to ensure unique and valid category budgets
     const uniqueBudgets = {};
     
     // First pass: create a map of the most recent budget per category
-    categoryBudgetsData.forEach(budget => {
-      if (!budget.categoryId) return;
+    matchingBudgets.forEach(budget => {
+      if (!budget || !budget.categoryId) return;
       
       if (!uniqueBudgets[budget.categoryId] || 
-          (budget.createdAt && (!uniqueBudgets[budget.categoryId].createdAt || 
-            new Date(budget.createdAt) > new Date(uniqueBudgets[budget.categoryId].createdAt)))) {
+          (budget.updatedAt && (!uniqueBudgets[budget.categoryId].updatedAt || 
+            new Date(budget.updatedAt) > new Date(uniqueBudgets[budget.categoryId].updatedAt)))) {
         uniqueBudgets[budget.categoryId] = {
           ...budget,
           budget_limit: Math.abs(budget.budget_limit || 0) // Ensure positive value
@@ -244,7 +304,7 @@ const Budgets = () => {
     return Object.values(uniqueBudgets);
   };
   
-  // Load data on component mount
+  // Load data based on selected month and year
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -255,45 +315,89 @@ const Budgets = () => {
         setCategories(categoriesData || []);
         
         console.log('Fetched categories:', categoriesData);
+        
+        // Kiểm tra xem có phải tháng hiện tại không
+        const isCurrentMonthSelected = checkIsCurrentMonth(selectedMonth, selectedYear);
+        setIsCurrentMonth(isCurrentMonthSelected);
 
-        // First, get the current budget limit
+        // Tải ngân sách theo tháng đã chọn
         try {
-          const budgetData = await getCurrentBudget();
-          console.log('Fetched budget data:', budgetData);
+          let budgetData;
+          if (isCurrentMonthSelected) {
+            budgetData = await getCurrentBudget();
+            console.log('Fetched current budget data:', budgetData);
+          } else {
+            budgetData = await getBudgetByMonth(selectedMonth, selectedYear);
+            console.log('Fetched budget data for specific month:', budgetData);
+          }
           
-          const processedBudget = processBudgetData(budgetData);
+          const processedBudget = processBudgetData(budgetData, selectedMonth, selectedYear);
+          console.log('Processed budget data:', processedBudget);
           
           if (processedBudget) {
-            // Set the initial budget with month/year
+            // Set the budget with selected month/year
             setMonthlyBudget(prev => ({
               ...prev,
               amount: processedBudget.budget || 0,
-              month: new Date().getMonth() + 1,
-              year: new Date().getFullYear()
+              month: selectedMonth,
+              year: selectedYear
             }));
+          } else {
+            // Nếu không có ngân sách, đặt giá trị mặc định
+            setMonthlyBudget({
+              amount: 0,
+              spent: 0,
+              month: selectedMonth,
+              year: selectedYear
+            });
           }
         } catch (budgetError) {
           console.error('Error loading budget data:', budgetError);
           toast.error('Không thể tải dữ liệu ngân sách.');
+          
+          // Set default values on error
+          setMonthlyBudget({
+            amount: 0,
+            spent: 0,
+            month: selectedMonth,
+            year: selectedYear
+          });
         }
         
-        // Now get category spending data from transactions
-        await fetchTransactionsByCategoryDirect();
+        // Tải thông tin chi tiêu theo tháng
+        if (isCurrentMonthSelected) {
+          // Chỉ tính toán chi tiêu cho tháng hiện tại
+          await fetchTransactionsByCategoryDirect(selectedMonth, selectedYear);
+          await fetchMonthlySummary(selectedMonth, selectedYear);
+        } else {
+          // Cho tháng trước, đặt chi tiêu = 0 vì không có dữ liệu chính xác
+          setMonthlyBudget(prev => ({
+            ...prev,
+            spent: 0
+          }));
+          setCategorySpending({});
+        }
         
-        // Get monthly summary
-        const summary = await fetchMonthlySummary();
-        
-        // Get category budgets
+        // Tải ngân sách danh mục theo tháng
         try {
-          const categoryBudgetsData = await getCategoryBudgets();
-          console.log('Fetched category budgets:', categoryBudgetsData);
+          let categoryBudgetsData;
+          if (isCurrentMonthSelected) {
+            categoryBudgetsData = await getCategoryBudgets();
+            console.log('Fetched current category budgets:', categoryBudgetsData);
+          } else {
+            categoryBudgetsData = await getCategoryBudgetsByMonth(selectedMonth, selectedYear);
+            console.log('Fetched category budgets for specific month:', categoryBudgetsData);
+          }
           
           // Process the category budgets
-          const processedBudgets = processCategoryBudgets(categoryBudgetsData);
+          const processedBudgets = processCategoryBudgets(categoryBudgetsData, selectedMonth, selectedYear);
+          console.log('Processed category budgets data:', processedBudgets);
           setCategoryBudgets(processedBudgets);
         } catch (catError) {
           console.error('Error loading category budgets:', catError);
           toast.error('Không thể tải dữ liệu hạn mức danh mục.');
+          // Set empty array on error
+          setCategoryBudgets([]);
         }
         
       } catch (error) {
@@ -305,9 +409,9 @@ const Budgets = () => {
     };
     
     fetchData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
   
-  // Handle budget update - use update instead of create to avoid duplicates
+  // Handle budget update
   const handleMonthlyBudgetSubmit = async (e) => {
     e.preventDefault();
     
@@ -320,36 +424,23 @@ const Budgets = () => {
       // Show loading toast
       const loadingToastId = toast.loading('Đang cập nhật ngân sách...');
       
-      // Get current month and year
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-      
       const budgetAmount = Math.abs(Number(newBudgetAmount)); // Ensure positive value
 
-      // Attempt to create a new budget
+      // Cập nhật ngân sách cho tháng được chọn
       try {
-        const response = await createBudget(
+        const response = await updateBudgetForMonth(
           budgetAmount,
-          currentMonth,
-          currentYear
+          selectedMonth,
+          selectedYear
         );
         
-        console.log('Budget creation response:', response);
-      } catch (createError) {
-        // If creation fails because budget exists, try to update it
-        if (createError.response?.data?.message?.includes('already exists')) {
-          console.log('Budget already exists, updating instead');
-          const updateResponse = await axios.put(`${API_URL}/budgets/update`, {
-            month: formatMonth(currentMonth, currentYear),
-            budget: budgetAmount
-          });
-          console.log('Budget update response:', updateResponse.data);
-        } else {
-          throw createError; // Re-throw if it's a different error
-        }
+        console.log('Budget update response:', response);
+      } catch (error) {
+        console.error('Failed to update budget:', error);
+        throw error;
       }
       
-      // Update ONLY the amount in the state, preserve the spent amount
+      // Update the amount in the state
       setMonthlyBudget(prev => ({
         ...prev,
         amount: budgetAmount
@@ -357,11 +448,9 @@ const Budgets = () => {
       
       setNewBudgetAmount('');
       toast.dismiss(loadingToastId);
-      toast.success('Đã cập nhật ngân sách tháng thành công');
-      
-      // Don't call fetchMonthlySummary() here as it might overwrite our changes
+      toast.success('Đã cập nhật ngân sách thành công');
     } catch (error) {
-      console.error('Error creating/updating budget:', error);
+      console.error('Error updating budget:', error);
       const errorMessage = error.response?.data?.message || 'Không thể cập nhật ngân sách. Vui lòng thử lại sau.';
       toast.error(errorMessage);
     }
@@ -390,15 +479,13 @@ const Budgets = () => {
       console.log('Category budget amount:', categoryBudgetAmount);
       console.log('Current category budgets:', categoryBudgets);
       
-      // Check if this category already has a budget
+      // Check if this category already has a budget for the selected month
       const existingBudget = categoryBudgets.find(
         budget => budget.categoryId === selectedCategory
       );
       
       console.log('Existing budget found:', existingBudget);
       
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
       const budgetAmount = Math.abs(Number(categoryBudgetAmount)); // Ensure positive value
       
       let result;
@@ -410,8 +497,8 @@ const Budgets = () => {
           result = await updateCategoryBudget(
             existingBudget.id, 
             budgetAmount, 
-            currentMonth, 
-            currentYear
+            selectedMonth, 
+            selectedYear
           );
           console.log('Update category budget result:', result);
         } catch (updateError) {
@@ -421,8 +508,8 @@ const Budgets = () => {
           result = await setCategoryBudget(
             selectedCategory, 
             budgetAmount, 
-            currentMonth, 
-            currentYear
+            selectedMonth, 
+            selectedYear
           );
           console.log('Create category budget result:', result);
         }
@@ -432,18 +519,23 @@ const Budgets = () => {
         result = await setCategoryBudget(
           selectedCategory, 
           budgetAmount, 
-          currentMonth, 
-          currentYear
+          selectedMonth, 
+          selectedYear
         );
         console.log('Create category budget result:', result);
       }
       
       // Refresh category budgets after update
-      const refreshedBudgets = await getCategoryBudgets();
+      let refreshedBudgets;
+      if (isCurrentMonth) {
+        refreshedBudgets = await getCategoryBudgets();
+      } else {
+        refreshedBudgets = await getCategoryBudgetsByMonth(selectedMonth, selectedYear);
+      }
       console.log('Refreshed category budgets:', refreshedBudgets);
       
       // Process the refreshed budgets
-      const processedBudgets = processCategoryBudgets(refreshedBudgets);
+      const processedBudgets = processCategoryBudgets(refreshedBudgets, selectedMonth, selectedYear);
       setCategoryBudgets(processedBudgets);
       
       // Reset form
@@ -452,11 +544,52 @@ const Budgets = () => {
       toast.dismiss(loadingToastId);
       toast.success('Đã cập nhật hạn mức danh mục thành công');
       
-      // Refresh spending data
-      fetchTransactionsByCategoryDirect();
+      // Refresh spending data if it's current month
+      if (isCurrentMonth) {
+        fetchTransactionsByCategoryDirect(selectedMonth, selectedYear);
+      }
     } catch (error) {
       console.error('Error setting category budget:', error);
       const errorMessage = error.response?.data?.message || 'Không thể cập nhật hạn mức danh mục. Vui lòng thử lại sau.';
+      toast.error(errorMessage);
+    }
+  };
+  
+  // Handle category budget deletion
+  const handleDeleteCategoryBudget = async (budgetId) => {
+    try {
+      // Xác nhận xóa
+      if (!window.confirm('Bạn có chắc muốn xóa hạn mức này?')) {
+        return;
+      }
+      
+      // Show loading toast
+      const loadingToastId = toast.loading('Đang xóa hạn mức danh mục...');
+      
+      await deleteCategoryBudget(budgetId);
+      
+      // Refresh category budgets after deletion
+      let refreshedBudgets;
+      if (isCurrentMonth) {
+        refreshedBudgets = await getCategoryBudgets();
+      } else {
+        refreshedBudgets = await getCategoryBudgetsByMonth(selectedMonth, selectedYear);
+      }
+      
+      // Process the refreshed budgets
+      const processedBudgets = processCategoryBudgets(refreshedBudgets, selectedMonth, selectedYear);
+      setCategoryBudgets(processedBudgets);
+      
+      toast.dismiss(loadingToastId);
+      toast.success('Đã xóa hạn mức danh mục thành công');
+      
+      // Refresh spending data if it's current month
+      if (isCurrentMonth) {
+        fetchTransactionsByCategoryDirect(selectedMonth, selectedYear);
+      }
+    } catch (error) {
+      console.error('Error deleting category budget:', error);
+      const errorMessage = error.response?.data?.message || 'Không thể xóa hạn mức danh mục. Vui lòng thử lại sau.';
       toast.error(errorMessage);
     }
   };
@@ -493,9 +626,58 @@ const Budgets = () => {
             </p>
           </div>
           
+          {/* Bộ chọn tháng và năm */}
+          <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+            <h2 className="text-lg font-medium text-gray-900 mb-3">Chọn tháng xem ngân sách</h2>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="sm:w-1/4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                    <option key={month} value={month}>
+                      {`Tháng ${month}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:w-1/4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              {!isCurrentMonth && (
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    onClick={() => {
+                      setSelectedMonth(currentDate.getMonth() + 1);
+                      setSelectedYear(currentDate.getFullYear());
+                    }}
+                  >
+                    Về tháng hiện tại
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
           {/* Ngân sách tổng */}
           <div className="mb-6 border border-gray-200 rounded-lg p-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-3">Ngân sách tháng này</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-3">
+              {isCurrentMonth ? 'Ngân sách tháng này' : `Ngân sách ${formatMonthDisplay(selectedMonth, selectedYear)}`}
+            </h2>
             
             {loading ? (
               <div className="text-center py-4">
@@ -508,18 +690,26 @@ const Budgets = () => {
                 <div className="mb-4">
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-medium text-gray-700">
-                      Chi tiêu: {formatCurrency(monthlyBudget.spent)} / {formatCurrency(monthlyBudget.amount)}
+                      {isCurrentMonth ? (
+                        `Chi tiêu: ${formatCurrency(monthlyBudget.spent)} / ${formatCurrency(monthlyBudget.amount)}`
+                      ) : (
+                        `Ngân sách: ${formatCurrency(monthlyBudget.amount)}`
+                      )}
                     </span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%
-                    </span>
+                    {isCurrentMonth && (
+                      <span className="text-sm font-medium text-gray-700">
+                        {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%
+                      </span>
+                    )}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
-                      style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
-                    ></div>
-                  </div>
+                  {isCurrentMonth && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-blue-600 h-2.5 rounded-full" 
+                        style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
+                      ></div>
+                    </div>
+                  )}
                 </div>
                 
                 <form onSubmit={handleMonthlyBudgetSubmit} className="mt-4">
@@ -528,7 +718,7 @@ const Budgets = () => {
                       <input
                         type="number"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Nhập ngân sách tháng (VNĐ)"
+                        placeholder={`Nhập ngân sách cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
                         value={newBudgetAmount}
                         onChange={(e) => setNewBudgetAmount(e.target.value)}
                         min="1"
@@ -548,7 +738,11 @@ const Budgets = () => {
           
           {/* Ngân sách theo danh mục */}
           <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Ngân sách theo danh mục</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              {isCurrentMonth 
+                ? 'Ngân sách theo danh mục tháng này' 
+                : `Ngân sách theo danh mục ${formatMonthDisplay(selectedMonth, selectedYear)}`}
+            </h2>
             
             {loading ? (
               <div className="text-center py-4">
@@ -579,7 +773,7 @@ const Budgets = () => {
                       <input
                         type="number"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Nhập hạn mức (VNĐ)"
+                        placeholder={`Nhập hạn mức cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
                         value={categoryBudgetAmount}
                         onChange={(e) => setCategoryBudgetAmount(e.target.value)}
                         min="1"
@@ -610,24 +804,31 @@ const Budgets = () => {
                           <h3 className="font-medium text-gray-800">{getCategoryName(budget.categoryId)}</h3>
                           <div className="flex justify-between mb-1 mt-2">
                             <span className="text-sm text-gray-700">
-                              Chi tiêu: {formatCurrency(spent)} / {formatCurrency(limit)}
+                              {isCurrentMonth 
+                                ? `Chi tiêu: ${formatCurrency(spent)} / ${formatCurrency(limit)}`
+                                : `Hạn mức: ${formatCurrency(limit)}`
+                              }
                             </span>
-                            <span className="text-sm text-gray-700">
-                              {calculatePercentage(spent, limit)}%
-                            </span>
+                            {isCurrentMonth && (
+                              <span className="text-sm text-gray-700">
+                                {calculatePercentage(spent, limit)}%
+                              </span>
+                            )}
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                calculatePercentage(spent, limit) > 90 
-                                  ? 'bg-red-500' 
-                                  : calculatePercentage(spent, limit) > 70 
-                                    ? 'bg-yellow-500' 
-                                    : 'bg-green-500'
-                              }`} 
-                              style={{ width: `${calculatePercentage(spent, limit)}%` }}
-                            ></div>
-                          </div>
+                          {isCurrentMonth && (
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${
+                                  calculatePercentage(spent, limit) > 90 
+                                    ? 'bg-red-500' 
+                                    : calculatePercentage(spent, limit) > 70 
+                                      ? 'bg-yellow-500' 
+                                      : 'bg-green-500'
+                                }`} 
+                                style={{ width: `${calculatePercentage(spent, limit)}%` }}
+                              ></div>
+                            </div>
+                          )}
                           <div className="mt-2 text-right">
                             <button
                               type="button"
@@ -639,16 +840,28 @@ const Budgets = () => {
                                   behavior: 'smooth'
                                 });
                               }}
-                              className="text-sm text-blue-600 hover:text-blue-800"
+                              className="text-sm text-blue-600 hover:text-blue-800 mr-4"
                             >
                               Cập nhật
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategoryBudget(budget.id)}
+                              className="text-sm text-red-600 hover:text-red-800"
+                            >
+                              Xóa
                             </button>
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    <p className="text-gray-600 italic">Chưa có hạn mức danh mục nào được thiết lập.</p>
+                    <p className="text-gray-600 italic">
+                      {isCurrentMonth 
+                        ? 'Chưa có hạn mức danh mục nào được thiết lập cho tháng này.'
+                        : `Chưa có hạn mức danh mục nào được thiết lập cho ${formatMonthDisplay(selectedMonth, selectedYear)}.`
+                      }
+                    </p>
                   )}
                 </div>
               </>
@@ -660,4 +873,4 @@ const Budgets = () => {
   );
 };
 
-export default Budgets; 
+export default Budgets;

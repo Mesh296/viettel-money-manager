@@ -92,16 +92,34 @@ const update = async (id, budget_limit, month) => {
             throw new Error('User category not found');
         }
 
-        if (month && !isValidMonthFormat(month)) {
-            throw new Error('Invalid month format: Expected e.g., "May 2025"');
+        // Kiểm tra giá trị budget_limit
+        if (typeof budget_limit !== 'number' || budget_limit < 0) {
+            throw new Error('Budget limit must be a non-negative number');
         }
 
-        const [updated] = await UserCategory.update(
-            { budget_limit, month },
-            { where: { id } }
-        );
-        if (updated === 0) {
-            throw new Error('Failed to update user category');
+        // Cập nhật chỉ budget_limit nếu không có tháng mới
+        if (!month) {
+            const [updated] = await UserCategory.update(
+                { budget_limit },
+                { where: { id } }
+            );
+            if (updated === 0) {
+                throw new Error('Failed to update user category');
+            }
+        } else {
+            // Kiểm tra định dạng tháng nếu có
+            if (!/^[A-Za-z]+ \d{4}$/.test(month)) {
+                throw new Error('Invalid month format: Expected e.g., "May 2025"');
+            }
+            
+            // Cập nhật cả budget_limit và month
+            const [updated] = await UserCategory.update(
+                { budget_limit, month },
+                { where: { id } }
+            );
+            if (updated === 0) {
+                throw new Error('Failed to update user category');
+            }
         }
 
         const updatedUserCategory = await getById(id);
@@ -125,11 +143,38 @@ const deleteUserCategory = async (id) => {
     }
 };
 
+// Lấy danh mục của người dùng theo tháng
+const getUserCategoriesByMonth = async (userId, month) => {
+    try {
+        if (!month) {
+            throw new Error('Month is required');
+        }
+        
+        // Kiểm tra định dạng tháng
+        if (!/^[A-Za-z]+ \d{4}$/.test(month)) {
+            throw new Error('Invalid month format: Expected e.g., "May 2025"');
+        }
+        
+        const userCategories = await UserCategory.findAll({
+            where: { userId, month },
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'email'] },
+                { model: Category, as: 'category', attributes: ['id', 'name'] },
+            ],
+        });
+        
+        return userCategories;
+    } catch (error) {
+        throw new Error(error.message || 'Error fetching user categories by month');
+    }
+};
+
 module.exports = {
     create,
     getAll,
     getById,
     update,
     deleteUserCategory,
-    getCurrentUserCategories
+    getCurrentUserCategories,
+    getUserCategoriesByMonth
 };

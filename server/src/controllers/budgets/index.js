@@ -75,6 +75,26 @@ const getCurrentUserBudget = async (req, res) => {
     }
 };
 
+const getUserBudgetByMonth = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const { month } = req.query;
+        
+        if (!month) {
+            return res.status(400).json({
+                message: 'Month query parameter is required'
+            });
+        }
+        
+        const data = await budgetService.getUserBudgetByMonth(currentUserId, month);
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(400).json({
+            message: error.message || 'Error fetching budget by month',
+        });
+    }
+};
+
 module.exports = {
     create,
     getAll,
@@ -82,4 +102,5 @@ module.exports = {
     update,
     deleteBudget,
     getCurrentUserBudget,
+    getUserBudgetByMonth,
 };

@@ -6,6 +6,7 @@ const router = express.Router();
 router.post('/create', auth, userCategoryController.create);
 router.get('/all', auth, userCategoryController.getAll);
 router.get('/current', auth, userCategoryController.getCurrentUserCategories);
+router.get('/by-month', auth, userCategoryController.getUserCategoriesByMonth);
 router.get('/:id', auth, userCategoryController.getById);
 router.put('/update/:id', auth, userCategoryController.update);
 router.delete('/delete/:id', auth, userCategoryController.deleteUserCategory);
