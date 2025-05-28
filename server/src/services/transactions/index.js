@@ -41,29 +41,9 @@ const create = async (currentUserId, categoryId, type, amount, date = null, note
 
         const transactionDate = parseDate(date);
         console.log("date: ", transactionDate);
-        const transactionMonth = transactionDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-
-        console.log()
         
-        let userCategory = await UserCategory.findOne({ where: { userId: currentUserId, categoryId, month: transactionMonth } });
-        if (!userCategory) {
-            userCategory = await UserCategory.create({
-                userId: currentUserId,
-                categoryId,
-                budget_limit: type === 'expense' ? 0.0 : amount,
-                month: transactionMonth, // Set month to match transaction
-            });
-        }
-        console.log("runheeeee")
-        let budget = await Budget.findOne({ where: { userId: currentUserId, month: transactionMonth } });
-        if (!budget) {
-            budget = await Budget.create({
-                userId: currentUserId,
-                month: transactionMonth,
-                budget: type === 'expense' ? 0.0 : amount,
-            });
-        }
-
+        // Không tạo hoặc cập nhật UserCategory và Budget nữa
+        
         const transaction = await Transaction.create({
             userId: currentUserId,
             categoryId: categoryId,
@@ -72,35 +52,6 @@ const create = async (currentUserId, categoryId, type, amount, date = null, note
             date: transactionDate,
             note,
         });
-
-        // if (type === 'expense') {
-        //     // Deduct the full amount from both budget_limit and budget, allowing negative values
-        //     const amountToDeductFromUserCategory = amount;
-        //     const amountToDeductFromBudget = amount;
-
-        //     if (amountToDeductFromUserCategory > 0) {
-        //         await UserCategory.update(
-        //             { budget_limit: Sequelize.literal(`budget_limit - ${amountToDeductFromUserCategory}`) },
-        //             { where: { userId: currentUserId, categoryId, month: transactionMonth } }
-        //         );
-        //     }
-
-        //     if (amountToDeductFromBudget > 0) {
-        //         await Budget.update(
-        //             { budget: Sequelize.literal(`budget - ${amountToDeductFromBudget}`) },
-        //             { where: { userId: currentUserId, month: transactionMonth } }
-        //         );
-        //     }
-        // } else if (type === 'income') {
-        //     await UserCategory.update(
-        //         { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
-        //         { where: { userId: currentUserId, categoryId } }
-        //     );
-        //     await Budget.update(
-        //         { budget: Sequelize.literal(`budget + ${amount}`) },
-        //         { where: { userId: currentUserId, month: transactionMonth } }
-        //     );
-        // }
 
         return transaction;
     } catch (error) {
@@ -160,41 +111,11 @@ const getById = async (transactionId) => {
 
 const deleteTransaction = async (transactionId) => {
     try {
-
         console.log("transactionId: ", transactionId)
         const transaction = await Transaction.findByPk(transactionId);
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-
-        const { userId, categoryId, type, amount, date } = transaction;
-        const transactionMonth = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-
-        // Find associated UserCategory and Budget
-        const userCategory = await UserCategory.findOne({ where: { userId, categoryId } });
-        const budget = await Budget.findOne({ where: { userId, month: transactionMonth } });
-
-        // if (userCategory && budget) {
-        //     if (type === 'expense') {
-        //         await UserCategory.update(
-        //             { budget_limit: Sequelize.literal(`budget_limit + ${amount}`) },
-        //             { where: { userId, categoryId } }
-        //         );
-        //         await Budget.update(
-        //             { budget: Sequelize.literal(`budget + ${amount}`) },
-        //             { where: { userId, month: transactionMonth } }
-        //         );
-        //     } else if (type === 'income') {
-        //         await UserCategory.update(
-        //             { budget_limit: Sequelize.literal(`budget_limit - ${amount}`) },
-        //             { where: { userId, categoryId } }
-        //         );
-        //         await Budget.update(
-        //             { budget: Sequelize.literal(`budget - ${amount}`) },
-        //             { where: { userId, month: transactionMonth } }
-        //         );
-        //     }
-        // }
 
         await Transaction.destroy({ where: { transactionId: transactionId } });
         return { message: 'Transaction deleted successfully' };
@@ -522,25 +443,15 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             throw new Error('Transaction not found or you do not have permission to update');
         }
 
-        // Lưu thông tin ban đầu trước khi cập nhật
-        const originalType = transaction.type;
-        const originalAmount = transaction.amount;
-        const originalCategoryId = transaction.categoryId;
-        const originalDate = transaction.date;
-        const originalMonth = originalDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-
         // Chuẩn bị dữ liệu cập nhật
         const { categoryId, type, amount, date, note } = updateData;
-        let updatedDate = originalDate;
+        let updatedDate = transaction.date;
         
         if (date) {
             console.log('Parsing date for update:', date);
             updatedDate = parseDate(date);
             console.log('Parsed date:', updatedDate);
         }
-        
-        const updatedMonth = updatedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-        const monthChanged = originalMonth !== updatedMonth;
 
         console.log('Updating transaction with data:', {
             categoryId: categoryId || transaction.categoryId,
@@ -558,97 +469,6 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             date: updatedDate,
             note: note !== undefined ? note : transaction.note
         });
-
-        // Cập nhật budget và userCategory nếu cần
-        // 1. Loại giao dịch không thay đổi và số tiền không thay đổi và tháng không thay đổi -> không cần cập nhật
-        // 2. Loại giao dịch thay đổi -> hoàn lại budget cũ, tạo budget mới
-        // 3. Số tiền thay đổi -> cập nhật hiệu số
-        // 4. Tháng thay đổi -> hoàn lại budget cũ, tạo budget mới
-
-        if (type !== originalType || amount !== originalAmount || categoryId !== originalCategoryId || monthChanged) {
-            console.log('Budget needs updating due to changes in transaction');
-            // Hoàn lại giá trị ban đầu
-            if (originalType === 'expense') {
-                // Nếu là chi tiêu, hoàn lại số tiền
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit + ${originalAmount}`) },
-                    { where: { userId, categoryId: originalCategoryId, month: originalMonth } }
-                );
-                
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget + ${originalAmount}`) },
-                    { where: { userId, month: originalMonth } }
-                );
-            } else {
-                // Nếu là thu nhập, trừ đi số tiền
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit - ${originalAmount}`) },
-                    { where: { userId, categoryId: originalCategoryId, month: originalMonth } }
-                );
-                
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget - ${originalAmount}`) },
-                    { where: { userId, month: originalMonth } }
-                );
-            }
-
-            // Thêm giá trị mới
-            const newType = type || originalType;
-            const newAmount = amount !== undefined ? amount : originalAmount;
-            const newCategoryId = categoryId || originalCategoryId;
-            
-            // Kiểm tra xem đã có UserCategory và Budget cho tháng mới chưa
-            if (monthChanged) {
-                console.log('Month changed, checking for UserCategory and Budget');
-                let userCategory = await UserCategory.findOne({ 
-                    where: { userId, categoryId: newCategoryId, month: updatedMonth } 
-                });
-                
-                if (!userCategory) {
-                    userCategory = await UserCategory.create({
-                        userId,
-                        categoryId: newCategoryId,
-                        budget_limit: 0,
-                        month: updatedMonth
-                    });
-                }
-                
-                let budget = await Budget.findOne({ 
-                    where: { userId, month: updatedMonth } 
-                });
-                
-                if (!budget) {
-                    budget = await Budget.create({
-                        userId,
-                        month: updatedMonth,
-                        budget: 0
-                    });
-                }
-            }
-
-            // Áp dụng giá trị mới
-            if (newType === 'expense') {
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit - ${newAmount}`) },
-                    { where: { userId, categoryId: newCategoryId, month: updatedMonth } }
-                );
-                
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget`) },
-                    { where: { userId, month: updatedMonth } }
-                );
-            } else {
-                await UserCategory.update(
-                    { budget_limit: Sequelize.literal(`budget_limit + ${newAmount}`) },
-                    { where: { userId, categoryId: newCategoryId, month: updatedMonth } }
-                );
-                
-                await Budget.update(
-                    { budget: Sequelize.literal(`budget`) },
-                    { where: { userId, month: updatedMonth } }
-                );
-            }
-        }
 
         console.log('Transaction updated successfully');
         // Trả về giao dịch đã cập nhật
