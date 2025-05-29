@@ -7,9 +7,9 @@ const setupAxiosInterceptors = () => {
   axios.interceptors.request.use(
     (config) => {
       const token = getAuthToken();
-      console.log(`Axios interceptor: Sending request to ${config.url}`);
+
       if (token) {
-        console.log('Axios interceptor: Adding token to request');
+
         config.headers.Authorization = `Bearer ${token}`;
       } else {
         console.log('Axios interceptor: No token available');
@@ -17,7 +17,7 @@ const setupAxiosInterceptors = () => {
       return config;
     },
     (error) => {
-      console.error('Axios interceptor: Request error', error);
+
       return Promise.reject(error);
     }
   );

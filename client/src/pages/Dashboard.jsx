@@ -1,11 +1,12 @@
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getSummaryStatistics } from '../services/statistics';
 import { toast } from 'react-toastify';
 import RecentTransactions from '../components/RecentTransactions';
 import MonthlyChart from '../components/MonthlyChart';
 import CategorySpendingChart from '../components/CategorySpendingChart';
+import AlertWidget from '../components/AlertWidget';
 
 const Dashboard = () => {
   const { user, loading: userLoading } = useAuth();
@@ -13,33 +14,32 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Tải thống kê khi component mount
-  useEffect(() => {
-    const fetchStatistics = async () => {
-      try {
-        setLoading(true);
-        // Lấy tháng hiện tại
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11
-        const currentYear = currentDate.getFullYear();
-        
-        const data = await getSummaryStatistics(currentMonth, currentYear);
-        setStatistics(data);
-        setError(null);
-      } catch (error) {
-        console.error('Error loading statistics:', error);
-        setError(error.message || 'Có lỗi xảy ra khi tải thống kê');
-        toast.error(error.message || 'Có lỗi xảy ra khi tải thống kê');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Thêm hàm để làm mới dữ liệu khi có thay đổi
+  const refreshData = useCallback(async () => {
+    if (!user) return;
     
-    // Chỉ tải thống kê khi đã có thông tin user
-    if (user) {
-      fetchStatistics();
+    try {
+      setLoading(true);
+      // Lấy tháng hiện tại
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+      
+      const data = await getSummaryStatistics(currentMonth, currentYear);
+      setStatistics(data);
+      setError(null);
+    } catch (error) {
+      console.error('Error refreshing statistics:', error);
+      setError(error.message || 'Có lỗi xảy ra khi tải thống kê');
+    } finally {
+      setLoading(false);
     }
   }, [user]);
+  
+  // Tải thống kê khi component mount
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
   
   // Format số tiền
   const formatAmount = (amount) => {
@@ -82,6 +82,11 @@ const Dashboard = () => {
                 <p className="font-medium">{user?.email || 'N/A'}</p>
               </div>
             </div>
+          </div>
+          
+          {/* Cảnh báo */}
+          <div className="mb-6">
+            <AlertWidget />
           </div>
           
           {/* Thống kê tổng quan */}

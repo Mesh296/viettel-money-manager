@@ -2,25 +2,19 @@ const { Transaction, UserCategory, Budget, User, Category } = require('../../mod
 const { Sequelize } = require('sequelize');
 
 const parseDate = (dateString) => {
-    console.log('parseDate called with:', dateString);
     if (!dateString) {
-        console.log('No date provided, returning current date');
         return new Date(); // Default to current date if not provided
     }
     
     const [day, month, year] = dateString.split('-').map(Number);
-    console.log('Parsed date parts:', { day, month, year });
     
     if (!day || !month || !year || day > 31 || month > 12 || year < 1900 || year > 2100) {
-        console.error('Invalid date format:', dateString);
         throw new Error('Invalid date format: Expected DD-MM-YYYY, year between 1900 and 2100');
     }
     
     const date = new Date(year, month - 1, day); // month is 0-based in JavaScript
-    console.log('Created Date object:', date);
     
     if (isNaN(date.getTime())) {
-        console.error('Invalid date, cannot parse:', dateString);
         throw new Error('Invalid date: Unable to parse date');
     }
     
@@ -40,10 +34,7 @@ const create = async (currentUserId, categoryId, type, amount, date = null, note
         }
 
         const transactionDate = parseDate(date);
-        console.log("date: ", transactionDate);
-        
-        // Không tạo hoặc cập nhật UserCategory và Budget nữa
-        
+
         const transaction = await Transaction.create({
             userId: currentUserId,
             categoryId: categoryId,
@@ -90,7 +81,6 @@ const getAllUserTransactions = async (currentUserId) => {
 
 const getById = async (transactionId) => {
     try {
-        console.log('Service getById called with ID:', transactionId);
         const transaction = await Transaction.findOne({
             where: { transactionId },
             include: [
@@ -98,20 +88,17 @@ const getById = async (transactionId) => {
                 { model: Category, as: 'category', attributes: ['id', 'name'] },
             ],
         });
-        console.log('Transaction found in database:', transaction ? 'Yes' : 'No');
         if (!transaction) {
             throw new Error('Transaction not found');
         }
         return transaction;
     } catch (error) {
-        console.error('Error in getById service:', error);
         throw new Error(error.message || 'Error fetching transaction');
     }
 };
 
 const deleteTransaction = async (transactionId) => {
     try {
-        console.log("transactionId: ", transactionId)
         const transaction = await Transaction.findByPk(transactionId);
         if (!transaction) {
             throw new Error('Transaction not found');
@@ -433,12 +420,10 @@ const getIncomeExpenseComparisonStats = async (userId, period = 'month', count =
 // Cập nhật giao dịch
 const updateTransaction = async (transactionId, userId, updateData) => {
     try {
-        console.log('Service updateTransaction called with ID:', transactionId, 'userId:', userId);
         const transaction = await Transaction.findOne({
             where: { transactionId, userId }
         });
 
-        console.log('Transaction found for update:', transaction ? 'Yes' : 'No');
         if (!transaction) {
             throw new Error('Transaction not found or you do not have permission to update');
         }
@@ -448,18 +433,9 @@ const updateTransaction = async (transactionId, userId, updateData) => {
         let updatedDate = transaction.date;
         
         if (date) {
-            console.log('Parsing date for update:', date);
             updatedDate = parseDate(date);
-            console.log('Parsed date:', updatedDate);
         }
 
-        console.log('Updating transaction with data:', {
-            categoryId: categoryId || transaction.categoryId,
-            type: type || transaction.type,
-            amount: amount !== undefined ? amount : transaction.amount,
-            date: updatedDate,
-            note: note !== undefined ? note : transaction.note
-        });
 
         // Thực hiện cập nhật
         await transaction.update({
@@ -469,12 +445,8 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             date: updatedDate,
             note: note !== undefined ? note : transaction.note
         });
-
-        console.log('Transaction updated successfully');
-        // Trả về giao dịch đã cập nhật
         return transaction;
     } catch (error) {
-        console.error('Error in updateTransaction service:', error);
         throw new Error(error.message || 'Error updating transaction');
     }
 };
@@ -579,8 +551,6 @@ const searchTransactions = async (userId, options) => {
             }
         }
         
-        console.log("Final whereClause:", JSON.stringify(whereClause, null, 2));
-        
         // Thực hiện truy vấn
         const result = await Transaction.findAndCountAll({
             where: whereClause,
@@ -605,7 +575,6 @@ const searchTransactions = async (userId, options) => {
             }
         };
     } catch (error) {
-        console.error('Search transaction error:', error);
         throw new Error(error.message || 'Error searching transactions');
     }
 };

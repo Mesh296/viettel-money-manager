@@ -81,14 +81,13 @@ const Budgets = () => {
   // Get monthly summary data
   const fetchMonthlySummary = async (month, year) => {
     try {
-      console.log(`Fetching statistics for month: ${month}, year: ${year}`);
+
       
       // Get monthly summary from the statistics endpoint
       const response = await axios.get(`${API_URL}/statistics/summary`, {
         params: { month, year }
       });
-      
-      console.log('Monthly summary API response:', response.data);
+
       
       if (response.data) {
         const summary = {
@@ -96,7 +95,7 @@ const Budgets = () => {
           totalExpenses: Math.abs(response.data.totalExpenses || 0)
         };
         
-        console.log('Processed summary data:', summary);
+
         setMonthlySummary(summary);
         return summary;
       }
@@ -115,7 +114,6 @@ const Budgets = () => {
         params: { month, year }
       });
       
-      console.log('Category spending API response:', response.data);
       
       // Format the data into a map of categoryId -> amount spent
       const spendingMap = {};
@@ -129,7 +127,6 @@ const Budgets = () => {
         });
       }
       
-      console.log('Processed category spending data:', spendingMap);
       setCategorySpending(spendingMap);
       return spendingMap;
     } catch (error) {
@@ -143,7 +140,6 @@ const Budgets = () => {
     try {
       // Get all transactions for the month
       const response = await axios.get(`${API_URL}/transactions/current`);
-      console.log('All transactions API response:', response.data);
       
       if (!response.data || !Array.isArray(response.data)) {
         console.error('Unexpected transactions API response format');
@@ -156,7 +152,6 @@ const Budgets = () => {
         return txDate.getMonth() + 1 === month && txDate.getFullYear() === year;
       });
       
-      console.log('Current month transactions:', currentMonthTransactions);
       
       // Group by category and sum up expense amounts only
       const spendingByCategory = {};
@@ -178,8 +173,6 @@ const Budgets = () => {
         }
       });
       
-      console.log('Direct calculation of spending by category:', spendingByCategory);
-      console.log('Total expenses calculated:', totalExpenses);
       
       // Update states - only update the spending amounts, not the budget limits
       setCategorySpending(spendingByCategory);
@@ -201,17 +194,14 @@ const Budgets = () => {
   const processBudgetData = (budgetData, targetMonth, targetYear) => {
     // Kiểm tra nếu không có dữ liệu
     if (!budgetData) {
-      console.log('No budget data to process');
       return null;
     }
     
     // Tạo chuỗi tháng để so sánh (tháng định dạng "Month YYYY")
     const monthFormat = formatMonth(targetMonth, targetYear);
-    console.log('Looking for budget with month:', monthFormat);
     
     // Trường hợp API trả về một đối tượng đơn lẻ (từ by-month API)
     if (!Array.isArray(budgetData)) {
-      console.log('Budget data is a single object:', budgetData);
       // Kiểm tra xem đối tượng có đúng tháng không
       if (budgetData.month === monthFormat) {
         // Đảm bảo giá trị ngân sách là số dương
@@ -220,14 +210,12 @@ const Budgets = () => {
           budget: Math.abs(budgetData.budget || 0)
         };
       } else {
-        console.log('Single budget object does not match target month');
         return null;
       }
     }
     
     // Trường hợp API trả về một mảng (từ current API)
     if (budgetData.length === 0) {
-      console.log('Budget data array is empty');
       return null;
     }
     
@@ -235,18 +223,15 @@ const Budgets = () => {
     const matchingBudgets = budgetData.filter(budget => budget.month === monthFormat);
     
     if (matchingBudgets.length === 0) {
-      console.log(`No budgets found for ${monthFormat}`);
       return null;
     }
     
-    console.log(`Found ${matchingBudgets.length} budgets for ${monthFormat}:`, matchingBudgets);
     
     // Nếu có nhiều budget cho cùng một tháng, chọn cái mới nhất theo updatedAt
     const sortedBudgets = [...matchingBudgets].sort((a, b) => 
       new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0)
     );
     
-    console.log('Sorted matching budgets by date:', sortedBudgets);
     
     // Get the most recent budget
     const latestBudget = sortedBudgets[0];

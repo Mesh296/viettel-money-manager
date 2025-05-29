@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getAllCategories } from '../services/categories';
-import { createTransaction } from '../services/transactions';
+import { createTransaction, updateTransaction } from '../services/transactions';
 import { toast } from 'react-toastify';
 
-const TransactionForm = ({ onTransactionAdded }) => {
+const TransactionForm = ({ transaction, onTransactionChange }) => {
   const [formData, setFormData] = useState({
     type: 'expense',
     categoryId: '',
@@ -52,37 +52,43 @@ const TransactionForm = ({ onTransactionAdded }) => {
     setFormData(prev => ({ ...prev, date }));
   };
   
-  const validateForm = () => {
-    const newErrors = {};
+  const resetForm = () => {
+    setFormData({
+      type: 'expense',
+      categoryId: '',
+      amount: '',
+      date: new Date(),
+      note: ''
+    });
+    setErrors({});
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
+    // Validate form
+    const newErrors = {};
     if (!formData.categoryId) {
       newErrors.categoryId = 'Vui lòng chọn danh mục';
     }
     
     if (!formData.amount || formData.amount <= 0) {
-      newErrors.amount = 'Vui lòng nhập số tiền hợp lệ (lớn hơn 0)';
+      newErrors.amount = 'Số tiền phải lớn hơn 0';
     }
     
-    if (!formData.date) {
-      newErrors.date = 'Vui lòng chọn ngày';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log('Form submitted, data:', formData);
-    
-    if (!validateForm()) {
-      console.log('Form validation failed, errors:', errors);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
     
-    setLoading(true);
-    
     try {
+      setLoading(true);
+      setErrors({});
+      
+      console.log('DEBUG - Submitting transaction with data:', formData);
+      const selectedCategory = categories.find(cat => String(cat.id) === String(formData.categoryId));
+      console.log('DEBUG - Selected category:', selectedCategory);
+      
       // Format ngày thành DD-MM-YYYY trước khi gửi
       const formattedDate = formData.date ? 
         `${formData.date.getDate().toString().padStart(2, '0')}-${(formData.date.getMonth() + 1).toString().padStart(2, '0')}-${formData.date.getFullYear()}` : '';
@@ -92,46 +98,45 @@ const TransactionForm = ({ onTransactionAdded }) => {
         date: formattedDate
       };
       
-      console.log('Sending transaction data to API:', transactionData);
-      const result = await createTransaction(transactionData);
-      console.log('API response:', result);
-      
-      toast.success('Giao dịch đã được thêm thành công!');
-      
-      // Reset form
-      setFormData({
-        type: 'expense',
-        categoryId: '',
-        amount: '',
-        date: new Date(),
-        note: ''
-      });
-      
-      // Thông báo cho component cha biết có giao dịch mới
-      if (onTransactionAdded) {
-        onTransactionAdded(result);
+      // If this is an edit, update the transaction
+      if (transaction) {
+        const result = await updateTransaction(transaction.transactionId, transactionData);
+        console.log('DEBUG - Transaction updated:', result);
+        resetForm();
+        // Notify parent component
+        if (onTransactionChange) onTransactionChange();
+        toast.success('Giao dịch đã được cập nhật');
+      } else {
+        // Create new transaction
+        const result = await createTransaction(transactionData);
+        console.log('DEBUG - New transaction created:', result);
+        resetForm();
+        // Notify parent component
+        if (onTransactionChange) onTransactionChange();
+        toast.success('Giao dịch đã được thêm');
       }
     } catch (error) {
-      console.error('Error creating transaction:', error);
-      toast.error(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi thêm giao dịch');
+      console.error('Error submitting transaction:', error);
+      setErrors({
+        form: error.response?.data?.error || 'Có lỗi xảy ra khi lưu giao dịch'
+      });
+      toast.error('Có lỗi xảy ra khi lưu giao dịch');
     } finally {
       setLoading(false);
     }
   };
   
-  // Hiển thị tất cả danh mục vì backend không có trường type
-  // const filteredCategories = categories.filter(
-  //   category => category.type === formData.type || category.type === 'both'
-  // );
-  
   // Sử dụng tất cả danh mục, không lọc
   const filteredCategories = categories;
   
-  console.log('Filtered categories:', filteredCategories);
-  console.log('Current form type:', formData.type);
-  
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow">
+      {errors.form && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {errors.form}
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Loại giao dịch */}
         <div>
@@ -267,7 +272,7 @@ const TransactionForm = ({ onTransactionAdded }) => {
               Đang xử lý...
             </>
           ) : (
-            'Thêm giao dịch'
+            transaction ? 'Cập nhật giao dịch' : 'Thêm giao dịch'
           )}
         </button>
       </div>

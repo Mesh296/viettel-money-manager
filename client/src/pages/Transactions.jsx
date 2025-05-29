@@ -1,46 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
+import { toast } from 'react-toastify';
 
 const Transactions = () => {
+  const [transactions, setTransactions] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  
-  // Xử lý khi có giao dịch mới được thêm
-  const handleTransactionAdded = () => {
-    // Tăng refreshTrigger để kích hoạt useEffect trong TransactionList
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'income', 'expense'
+
+  // Callback when a transaction is created or updated
+  const handleTransactionChange = () => {
+    console.log('DEBUG - Transaction changed, refreshing transaction list');
+    // Increment to trigger refresh
     setRefreshTrigger(prev => prev + 1);
+    
+    toast.success('Giao dịch đã được cập nhật thành công');
   };
   
+  const filterTransactions = (tab) => {
+    setActiveTab(tab);
+  };
+
   return (
     <div>
       <Navbar />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Giao dịch</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Quản lý giao dịch</h1>
           
-          <div className="mb-6 p-4 bg-blue-50 rounded-md">
-            <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý giao dịch</h2>
-            <p className="text-gray-600">
-              Tại đây bạn có thể thêm mới, tìm kiếm, chỉnh sửa và xóa các giao dịch thu chi.
-            </p>
-          </div>
-          
-          {/* Form thêm mới giao dịch */}
-          <div className="border-t border-gray-200 pt-6 mb-8">
+          <div className="mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Thêm giao dịch mới</h2>
-            <TransactionForm onTransactionAdded={handleTransactionAdded} />
+            <TransactionForm onTransactionChange={handleTransactionChange} />
           </div>
           
-          {/* Danh sách giao dịch */}
           <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Lịch sử giao dịch</h2>
-            <p className="text-gray-600 mb-4">
-              Bạn có thể tìm kiếm, lọc, chỉnh sửa hoặc xóa giao dịch bên dưới.
-              Sử dụng bộ lọc để tìm kiếm giao dịch theo thời gian, danh mục, loại hoặc từ khóa.
-            </p>
-            <TransactionList refreshTrigger={refreshTrigger} />
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-gray-900">Danh sách giao dịch</h2>
+              
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => filterTransactions('all')}
+                  className={`px-3 py-1 rounded ${activeTab === 'all' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Tất cả
+                </button>
+                <button 
+                  onClick={() => filterTransactions('income')}
+                  className={`px-3 py-1 rounded ${activeTab === 'income' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Thu nhập
+                </button>
+                <button 
+                  onClick={() => filterTransactions('expense')}
+                  className={`px-3 py-1 rounded ${activeTab === 'expense' 
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Chi tiêu
+                </button>
+              </div>
+            </div>
+            
+            <TransactionList 
+              refreshTrigger={refreshTrigger} 
+              filter={activeTab} 
+              onTransactionChange={handleTransactionChange} 
+            />
           </div>
         </div>
       </div>

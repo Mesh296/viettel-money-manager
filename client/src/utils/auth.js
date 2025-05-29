@@ -4,19 +4,14 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 
 // Set auth tokens in localStorage
 export const setAuthToken = (token, refreshToken) => {
-  console.log('setAuthToken: Nhận token để lưu trữ:', token ? 'Có' : 'Không');
-  console.log('setAuthToken: Nhận refreshToken để lưu trữ:', refreshToken ? 'Có' : 'Không');
-  
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
-    console.log('setAuthToken: Đã lưu token vào localStorage');
   } else {
     console.warn('setAuthToken: Token rỗng, không lưu vào localStorage');
   }
   
   if (refreshToken) {
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    console.log('setAuthToken: Đã lưu refreshToken vào localStorage');
   } else {
     console.warn('setAuthToken: RefreshToken rỗng, không lưu vào localStorage');
   }

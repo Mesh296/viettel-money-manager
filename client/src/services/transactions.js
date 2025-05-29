@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { API_URL } from './config';
+import { getSummaryStatistics, getCategoryExpenses } from './statistics';
+import { generateAlerts } from './alerts';
+import { getCurrentBudget, getCategoryBudgets } from './budgets';
 
 // Thiết lập interceptor để thêm token vào mọi request
 const getAuthToken = () => {
@@ -20,13 +23,19 @@ export const createTransaction = async (transactionData) => {
       note: transactionData.note || ""
     };
     
-    console.log('Formatted transaction data for API:', formattedData);
+
     
     const response = await axios.post(`${API_URL}/transactions/create`, formattedData, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+
+    // Kiểm tra cảnh báo sau khi tạo giao dịch mới
+    if (formattedData.type === 'expense') {
+      await checkAlertsAfterTransaction();
+    }
+
     return response.data;
   } catch (error) {
     console.error('API error in createTransaction:', error.response || error);
@@ -53,8 +62,6 @@ export const getCurrentUserTransactions = async (options = {}) => {
       }
     });
     
-    // Log dữ liệu giao dịch để debug
-    console.log('Transaction data from API:', response.data);
     
     // Kiểm tra cấu trúc dữ liệu và trả về mảng giao dịch
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
@@ -71,7 +78,7 @@ export const getCurrentUserTransactions = async (options = {}) => {
 // Lấy giao dịch theo ID
 export const getTransactionById = async (transactionId) => {
   try {
-    console.log('Getting transaction by ID:', transactionId);
+
     if (!transactionId) {
       console.error('No transaction ID provided to getTransactionById');
       throw new Error('ID giao dịch không hợp lệ');
@@ -89,7 +96,7 @@ export const getTransactionById = async (transactionId) => {
       }
     });
     
-    console.log('Transaction data received from server:', response);
+
     
     if (response && response.data) {
       return response.data;
@@ -149,7 +156,7 @@ export const searchTransactions = async (searchParams) => {
     if (searchParams.sortBy) params.sortBy = searchParams.sortBy;
     if (searchParams.sortOrder) params.sortOrder = searchParams.sortOrder;
     
-    console.log('Search params:', params);
+  
     
     const response = await axios.get(`${API_URL}/transactions/search`, {
       params,
@@ -188,8 +195,7 @@ export const updateTransaction = async (transactionId, updateData) => {
       note: updateData.note || ""
     };
     
-    console.log('Updating transaction ID:', transactionId);
-    console.log('Update data for API:', formattedData);
+
     
     // Kiểm tra categoryId có phải là UUID không
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -203,10 +209,120 @@ export const updateTransaction = async (transactionId, updateData) => {
         Authorization: `Bearer ${token}`
       }
     });
+
+    // Kiểm tra cảnh báo sau khi cập nhật giao dịch
+    if (formattedData.type === 'expense') {
+      await checkAlertsAfterTransaction();
+    }
+
     console.log('Update response:', response.data);
     return response.data;
   } catch (error) {
     console.error('API error in updateTransaction:', error.response || error);
     throw error.response?.data || { message: error.message || 'Có lỗi xảy ra khi cập nhật giao dịch' };
+  }
+};
+
+/**
+ * Kiểm tra và tạo cảnh báo sau khi thêm/cập nhật giao dịch
+ */
+export const checkAlertsAfterTransaction = async () => {
+  try {
+    // Lấy tháng và năm hiện tại
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11
+    const currentYear = currentDate.getFullYear();
+    
+    console.log(`DEBUG - Checking alerts for month ${currentMonth}/${currentYear}`);
+    
+    // Lấy thống kê mới nhất
+    const statistics = await getSummaryStatistics(currentMonth, currentYear);
+    console.log('DEBUG - Retrieved statistics:', statistics);
+    
+    // Lấy ngân sách tháng hiện tại từ API
+    const budget = await getCurrentBudget();
+    console.log('DEBUG - Retrieved monthly budget:', budget);
+    
+    // Lấy ngân sách theo danh mục từ API
+    const categoryBudgets = await getCategoryBudgets();
+    console.log('DEBUG - Retrieved category budgets:', categoryBudgets);
+    
+    // Lấy chi tiêu theo danh mục từ API
+    const categoryExpenses = await getCategoryExpenses(currentMonth, currentYear);
+    console.log('DEBUG - Retrieved category expenses:', categoryExpenses);
+    
+    // Make sure our data formats are correct
+    if (!Array.isArray(categoryBudgets)) {
+      console.error('DEBUG - categoryBudgets is not an array!', categoryBudgets);
+      return [];
+    }
+    
+    if (!Array.isArray(categoryExpenses)) {
+      console.error('DEBUG - categoryExpenses is not an array!', categoryExpenses);
+      return [];
+    }
+    
+    // Log the structure of the first items if they exist
+    if (categoryBudgets.length > 0) {
+      console.log('DEBUG - First category budget structure:', JSON.stringify(categoryBudgets[0]));
+    }
+    
+    if (categoryExpenses.length > 0) {
+      console.log('DEBUG - First category expense structure:', JSON.stringify(categoryExpenses[0]));
+    }
+    
+    // Make sure categories have the expected properties
+    const processedCategoryBudgets = categoryBudgets.map(budget => {
+      // Ensure categoryId is a string
+      if (budget.categoryId) {
+        budget.categoryId = String(budget.categoryId).trim();
+      }
+      
+      // Make sure budget_limit is accessible
+      if (!budget.budget_limit && budget.amount) {
+        budget.budget_limit = budget.amount;
+      }
+      
+      return budget;
+    });
+    
+    // Make sure expenses have the expected properties 
+    const processedCategoryExpenses = categoryExpenses.map(expense => {
+      // Ensure categoryId is a string
+      if (expense.categoryId) {
+        expense.categoryId = String(expense.categoryId).trim();
+      }
+      
+      // Ensure category property exists with name
+      if (!expense.category) {
+        expense.category = { name: expense.categoryName || expense.name || 'Không xác định' };
+      }
+      
+      // Make sure amount is accessible
+      if (!expense.amount && expense.total) {
+        expense.amount = expense.total;
+      }
+      
+      return expense;
+    });
+    
+    console.log('DEBUG - Alert check data after processing:');
+    console.log('statistics:', statistics);
+    console.log('budget:', budget);
+    console.log('processedCategoryBudgets:', processedCategoryBudgets);
+    console.log('processedCategoryExpenses:', processedCategoryExpenses);
+    
+    // Tạo cảnh báo dựa trên dữ liệu thực tế
+    const alerts = await generateAlerts(statistics, budget, processedCategoryBudgets, processedCategoryExpenses);
+    
+    // Hiển thị thông báo cho người dùng
+    if (alerts && alerts.length > 0) {
+      console.log('Cảnh báo được tạo:', alerts);
+    }
+    
+    return alerts;
+  } catch (error) {
+    console.error('Error checking alerts after transaction:', error);
+    return [];
   }
 }; 

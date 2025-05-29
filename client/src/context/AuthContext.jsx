@@ -25,15 +25,15 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       try {
         const token = getAuthToken();
-        console.log('AuthContext init: Token từ localStorage:', token ? 'Có' : 'Không');
+
         
         if (token) {
           setAxiosAuthToken(axios, token);
           
           try {
-            console.log('AuthContext init: Đang gọi API getUserInfo');
+
             const userData = await getUserInfo();
-            console.log('AuthContext init: Thông tin user:', userData);
+
             setUser(userData);
           } catch (userError) {
             console.error('AuthContext init: Lỗi khi lấy thông tin user:', userError);
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
             setUser(null);
           }
         } else {
-          console.log('AuthContext init: Không tìm thấy token');
+
           setUser(null);
         }
       } catch (error) {
@@ -50,12 +50,12 @@ export const AuthProvider = ({ children }) => {
         clearAuthToken();
         setUser(null);
       } finally {
-        console.log('AuthContext init: Hoàn tất khởi tạo');
+
         setLoading(false);
       }
     };
 
-    console.log('AuthContext: Bắt đầu khởi tạo');
+
     initializeAuth();
   }, []);
 
@@ -65,9 +65,8 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      console.log('Auth context: Bắt đầu đăng nhập');
       const response = await loginApi(email, password);
-      console.log('Auth context: Response từ API:', response);
+
       
       // Xử lý các trường hợp khác nhau của response từ server
       let token, refreshToken, userData;
@@ -91,10 +90,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Auth context: Không tìm thấy token trong response', response);
         throw new Error('Cấu trúc response không hợp lệ');
       }
-      
-      console.log('Auth context: Token nhận được:', token ? 'Có' : 'Không');
-      console.log('Auth context: RefreshToken nhận được:', refreshToken ? 'Có' : 'Không');
-      console.log('Auth context: User data từ response:', userData);
+
       
       if (!token) {
         throw new Error('Token không hợp lệ');
@@ -143,7 +139,6 @@ export const AuthProvider = ({ children }) => {
     logout,
     get isAuthenticated() {
       const hasToken = !!getAuthToken();
-      console.log('isAuthenticated check - hasToken:', hasToken, 'hasUser:', !!user);
       
       // Trong giai đoạn vừa đăng nhập, chúng ta có token nhưng chưa có user
       // Cho phép redirect đến dashboard trong trường hợp này
