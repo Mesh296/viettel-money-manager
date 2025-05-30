@@ -11,11 +11,8 @@ const Transactions = () => {
 
   // Callback when a transaction is created or updated
   const handleTransactionChange = () => {
-    console.log('DEBUG - Transaction changed, refreshing transaction list');
     // Increment to trigger refresh
     setRefreshTrigger(prev => prev + 1);
-    
-    toast.success('Giao dịch đã được cập nhật thành công');
   };
   
   const filterTransactions = (tab) => {

@@ -105,7 +105,6 @@ const TransactionForm = ({ transaction, onTransactionChange }) => {
         resetForm();
         // Notify parent component
         if (onTransactionChange) onTransactionChange();
-        toast.success('Giao dịch đã được cập nhật');
       } else {
         // Create new transaction
         const result = await createTransaction(transactionData);

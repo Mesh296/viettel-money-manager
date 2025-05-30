@@ -33,7 +33,7 @@ export const createTransaction = async (transactionData) => {
 
     // Kiểm tra cảnh báo sau khi tạo giao dịch mới
     if (formattedData.type === 'expense') {
-      await checkAlertsAfterTransaction();
+      await checkAlertsAfterTransaction(formattedData.categoryId);
     }
 
     return response.data;
@@ -212,7 +212,7 @@ export const updateTransaction = async (transactionId, updateData) => {
 
     // Kiểm tra cảnh báo sau khi cập nhật giao dịch
     if (formattedData.type === 'expense') {
-      await checkAlertsAfterTransaction();
+      await checkAlertsAfterTransaction(formattedData.categoryId);
     }
 
     console.log('Update response:', response.data);
@@ -225,50 +225,124 @@ export const updateTransaction = async (transactionId, updateData) => {
 
 /**
  * Kiểm tra và tạo cảnh báo sau khi thêm/cập nhật giao dịch
+ * @param {string} categoryId - ID của danh mục liên quan đến giao dịch
  */
-export const checkAlertsAfterTransaction = async () => {
+export const checkAlertsAfterTransaction = async (categoryId) => {
   try {
     // Lấy tháng và năm hiện tại
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11
     const currentYear = currentDate.getFullYear();
     
-    console.log(`DEBUG - Checking alerts for month ${currentMonth}/${currentYear}`);
+    if (!categoryId) {
+      console.log('No category ID provided, skipping category-specific alert check');
+      return [];
+    }
     
     // Lấy thống kê mới nhất
     const statistics = await getSummaryStatistics(currentMonth, currentYear);
-    console.log('DEBUG - Retrieved statistics:', statistics);
     
     // Lấy ngân sách tháng hiện tại từ API
     const budget = await getCurrentBudget();
-    console.log('DEBUG - Retrieved monthly budget:', budget);
+    
+    // Nếu có categoryId, chỉ lấy ngân sách và chi tiêu của danh mục đó
+    let categoryBudgets = [];
+    let categoryExpenses = [];
     
     // Lấy ngân sách theo danh mục từ API
-    const categoryBudgets = await getCategoryBudgets();
-    console.log('DEBUG - Retrieved category budgets:', categoryBudgets);
+    const allCategoryBudgets = await getCategoryBudgets();
     
     // Lấy chi tiêu theo danh mục từ API
-    const categoryExpenses = await getCategoryExpenses(currentMonth, currentYear);
-    console.log('DEBUG - Retrieved category expenses:', categoryExpenses);
+    const allCategoryExpenses = await getCategoryExpenses(currentMonth, currentYear);
+    
+    // Nếu có categoryId, chỉ lọc lấy ngân sách và chi tiêu của danh mục đó
+    // Lọc ngân sách theo categoryId
+    categoryBudgets = allCategoryBudgets.filter(budget => 
+      String(budget.categoryId).trim() === String(categoryId).trim()
+    );
+    
+    // Lọc chi tiêu theo categoryId
+    categoryExpenses = allCategoryExpenses.filter(expense => 
+      String(expense.categoryId).trim() === String(categoryId).trim()
+    );
+    
+    // Kiểm tra xem có vượt ngân sách danh mục không
+    if (categoryBudgets.length > 0 && categoryExpenses.length > 0) {
+      const budget = categoryBudgets[0];
+      const expense = categoryExpenses[0];
+      
+      const budgetAmount = budget.budget_limit || budget.amount || 0;
+      const expenseAmount = expense.amount || expense.total || 0;
+      
+      // Lấy tên danh mục
+      let categoryName = 'Không xác định';
+      if (expense.category && expense.category.name) {
+        categoryName = expense.category.name;
+      } else if (expense.name) {
+        categoryName = expense.name;
+      } else if (expense.categoryName) {
+        categoryName = expense.categoryName;
+      }
+      
+      // Kiểm tra vượt ngân sách và hiển thị toast trực tiếp
+      if (budgetAmount > 0 && expenseAmount > budgetAmount) {
+        const formattedBudget = budgetAmount.toLocaleString('vi-VN');
+        const message = `Chi tiêu danh mục "${categoryName}" đã vượt ngân sách ${formattedBudget}₫`;
+        
+        // Hiển thị toast trực tiếp từ transaction service
+        try {
+          if (window.toastLib) {
+            window.toastLib.error(message, {
+              position: "top-right",
+              autoClose: 10000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true
+            });
+          } else if (window.showToast) {
+            window.showToast.error(message);
+          }
+        } catch (toastError) {
+          console.error('Error showing toast:', toastError);
+        }
+      }
+    }
+    
+    // Kiểm tra xem có vượt ngân sách tháng không
+    if (budget) {
+      const budgetAmount = budget.budget || budget.amount || 0;
+      const totalExpense = statistics?.totalExpense || 0;
+      
+      // Kiểm tra vượt ngân sách tháng và hiển thị toast trực tiếp
+      if (budgetAmount > 0 && totalExpense > budgetAmount) {
+        const formattedBudget = budgetAmount.toLocaleString('vi-VN');
+        const message = `Chi tiêu tháng này đã vượt ngân sách ${formattedBudget}₫`;
+        
+        // Hiển thị toast trực tiếp từ transaction service
+        try {
+          if (window.toastLib) {
+            window.toastLib.error(message, {
+              position: "top-right",
+              autoClose: 10000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true
+            });
+          } else if (window.showToast) {
+            window.showToast.error(message);
+          }
+          console.log('DEBUG - Toast notification displayed successfully for monthly budget alert');
+        } catch (toastError) {
+          console.error('Error showing toast:', toastError);
+        }
+      }
+    }
     
     // Make sure our data formats are correct
-    if (!Array.isArray(categoryBudgets)) {
-      console.error('DEBUG - categoryBudgets is not an array!', categoryBudgets);
+    if (!Array.isArray(categoryBudgets) || !Array.isArray(categoryExpenses)) {
       return [];
-    }
-    
-    if (!Array.isArray(categoryExpenses)) {
-      console.error('DEBUG - categoryExpenses is not an array!', categoryExpenses);
-      return [];
-    }
-    
-    // Log the structure of the first items if they exist
-    if (categoryBudgets.length > 0) {
-      console.log('DEBUG - First category budget structure:', JSON.stringify(categoryBudgets[0]));
-    }
-    
-    if (categoryExpenses.length > 0) {
-      console.log('DEBUG - First category expense structure:', JSON.stringify(categoryExpenses[0]));
     }
     
     // Make sure categories have the expected properties
@@ -306,19 +380,8 @@ export const checkAlertsAfterTransaction = async () => {
       return expense;
     });
     
-    console.log('DEBUG - Alert check data after processing:');
-    console.log('statistics:', statistics);
-    console.log('budget:', budget);
-    console.log('processedCategoryBudgets:', processedCategoryBudgets);
-    console.log('processedCategoryExpenses:', processedCategoryExpenses);
-    
     // Tạo cảnh báo dựa trên dữ liệu thực tế
     const alerts = await generateAlerts(statistics, budget, processedCategoryBudgets, processedCategoryExpenses);
-    
-    // Hiển thị thông báo cho người dùng
-    if (alerts && alerts.length > 0) {
-      console.log('Cảnh báo được tạo:', alerts);
-    }
     
     return alerts;
   } catch (error) {
