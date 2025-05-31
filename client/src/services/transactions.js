@@ -2,7 +2,7 @@ import axios from 'axios';
 import { API_URL } from './config';
 import { getSummaryStatistics, getCategoryExpenses } from './statistics';
 import { generateAlerts } from './alerts';
-import { getCurrentBudget, getCategoryBudgets } from './budgets';
+import { getCurrentBudget, getCategoryBudgets, getBudgetByMonth, getCategoryBudgetsByMonth } from './budgets';
 
 // Thiết lập interceptor để thêm token vào mọi request
 const getAuthToken = () => {
@@ -33,7 +33,7 @@ export const createTransaction = async (transactionData) => {
 
     // Kiểm tra cảnh báo sau khi tạo giao dịch mới
     if (formattedData.type === 'expense') {
-      await checkAlertsAfterTransaction(formattedData.categoryId);
+      await checkAlertsAfterTransaction(formattedData.categoryId, formattedData.date);
     }
 
     return response.data;
@@ -212,7 +212,7 @@ export const updateTransaction = async (transactionId, updateData) => {
 
     // Kiểm tra cảnh báo sau khi cập nhật giao dịch
     if (formattedData.type === 'expense') {
-      await checkAlertsAfterTransaction(formattedData.categoryId);
+      await checkAlertsAfterTransaction(formattedData.categoryId, formattedData.date);
     }
 
     console.log('Update response:', response.data);
@@ -226,34 +226,70 @@ export const updateTransaction = async (transactionId, updateData) => {
 /**
  * Kiểm tra và tạo cảnh báo sau khi thêm/cập nhật giao dịch
  * @param {string} categoryId - ID của danh mục liên quan đến giao dịch
+ * @param {string} transactionDate - Ngày của giao dịch (định dạng DD-MM-YYYY)
  */
-export const checkAlertsAfterTransaction = async (categoryId) => {
+export const checkAlertsAfterTransaction = async (categoryId, transactionDate) => {
   try {
-    // Lấy tháng và năm hiện tại
+    // Lấy tháng và năm từ ngày giao dịch nếu có, nếu không sử dụng tháng và năm hiện tại
+    let transactionMonth, transactionYear;
+    
+    if (transactionDate) {
+      // Parse transaction date (expected format DD-MM-YYYY)
+      try {
+        const parts = transactionDate.split('-');
+        if (parts.length === 3) {
+          // Format is DD-MM-YYYY
+          transactionMonth = parseInt(parts[1], 10);
+          transactionYear = parseInt(parts[2], 10);
+        }
+      } catch (e) {
+        console.error('Error parsing transaction date:', e);
+      }
+    }
+    
+    // Fallback to current month/year if parsing failed
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11
     const currentYear = currentDate.getFullYear();
+    
+    const month = transactionMonth || currentMonth;
+    const year = transactionYear || currentYear;
     
     if (!categoryId) {
       console.log('No category ID provided, skipping category-specific alert check');
       return [];
     }
     
-    // Lấy thống kê mới nhất
-    const statistics = await getSummaryStatistics(currentMonth, currentYear);
+    console.log(`Checking alerts for transaction: month=${month}, year=${year}`);
     
-    // Lấy ngân sách tháng hiện tại từ API
-    const budget = await getCurrentBudget();
+    // Lấy thống kê cho tháng của giao dịch
+    const statistics = await getSummaryStatistics(month, year);
+    
+    // Lấy ngân sách cho tháng của giao dịch
+    let budget;
+    if (month === currentMonth && year === currentYear) {
+      // Nếu là tháng hiện tại, dùng API getCurrentBudget
+      budget = await getCurrentBudget();
+    } else {
+      // Nếu là tháng khác, dùng API getBudgetByMonth
+      const formattedMonth = formatMonth(month, year);
+      budget = await getBudgetByMonth(month, year);
+    }
     
     // Nếu có categoryId, chỉ lấy ngân sách và chi tiêu của danh mục đó
     let categoryBudgets = [];
     let categoryExpenses = [];
     
     // Lấy ngân sách theo danh mục từ API
-    const allCategoryBudgets = await getCategoryBudgets();
+    let allCategoryBudgets;
+    if (month === currentMonth && year === currentYear) {
+      allCategoryBudgets = await getCategoryBudgets();
+    } else {
+      allCategoryBudgets = await getCategoryBudgetsByMonth(month, year);
+    }
     
     // Lấy chi tiêu theo danh mục từ API
-    const allCategoryExpenses = await getCategoryExpenses(currentMonth, currentYear);
+    const allCategoryExpenses = await getCategoryExpenses(month, year);
     
     // Nếu có categoryId, chỉ lọc lấy ngân sách và chi tiêu của danh mục đó
     // Lọc ngân sách theo categoryId
@@ -287,7 +323,10 @@ export const checkAlertsAfterTransaction = async (categoryId) => {
       // Kiểm tra vượt ngân sách và hiển thị toast trực tiếp
       if (budgetAmount > 0 && expenseAmount > budgetAmount) {
         const formattedBudget = budgetAmount.toLocaleString('vi-VN');
-        const message = `Chi tiêu danh mục "${categoryName}" đã vượt ngân sách ${formattedBudget}₫`;
+        const monthText = (month === currentMonth && year === currentYear) 
+          ? "tháng này" 
+          : `tháng ${month}/${year}`;
+        const message = `Chi tiêu danh mục "${categoryName}" đã vượt ngân sách ${monthText} (${formattedBudget}₫)`;
         
         // Hiển thị toast trực tiếp từ transaction service
         try {
@@ -317,7 +356,10 @@ export const checkAlertsAfterTransaction = async (categoryId) => {
       // Kiểm tra vượt ngân sách tháng và hiển thị toast trực tiếp
       if (budgetAmount > 0 && totalExpense > budgetAmount) {
         const formattedBudget = budgetAmount.toLocaleString('vi-VN');
-        const message = `Chi tiêu tháng này đã vượt ngân sách ${formattedBudget}₫`;
+        const monthText = (month === currentMonth && year === currentYear) 
+          ? "tháng này" 
+          : `tháng ${month}/${year}`;
+        const message = `Chi tiêu ${monthText} đã vượt ngân sách ${formattedBudget}₫`;
         
         // Hiển thị toast trực tiếp từ transaction service
         try {
@@ -381,11 +423,23 @@ export const checkAlertsAfterTransaction = async (categoryId) => {
     });
     
     // Tạo cảnh báo dựa trên dữ liệu thực tế
-    const alerts = await generateAlerts(statistics, budget, processedCategoryBudgets, processedCategoryExpenses);
+    const alerts = await generateAlerts(statistics, budget, processedCategoryBudgets, processedCategoryExpenses, month, year);
     
     return alerts;
   } catch (error) {
     console.error('Error checking alerts after transaction:', error);
     return [];
   }
+};
+
+// Helper to format month as expected by backend
+const formatMonth = (monthNum, year = new Date().getFullYear()) => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  // Convert to 0-based index
+  const monthIndex = Number(monthNum) - 1;
+  // Format as "May 2023"
+  return `${months[monthIndex]} ${year}`;
 }; 

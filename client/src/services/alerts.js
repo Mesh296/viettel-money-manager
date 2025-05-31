@@ -109,8 +109,10 @@ export const deleteAllAlerts = async () => {
  * Check if monthly expense is approaching budget limit (90% threshold)
  * @param {number} totalExpense - Total expense amount
  * @param {number} budgetLimit - Budget limit amount
+ * @param {number} month - Month number (1-12)
+ * @param {number} year - Year
  */
-export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
+export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit, month = null, year = null) => {
   try {
     console.log('DEBUG - INSIDE checkMonthlyBudgetWarning function');
     console.log('totalExpense:', totalExpense, 'type:', typeof totalExpense);
@@ -119,6 +121,17 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
     // Convert values to numbers if they're not already and ensure they're valid
     const expenseAmount = Number(totalExpense) || 0;
     const budgetAmount = Number(budgetLimit) || 0;
+    
+    // Get current month/year for comparison
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear();
+    
+    // Use provided month/year or default to current
+    const targetMonth = month || currentMonth;
+    const targetYear = year || currentYear;
+    
+    const isCurrentMonth = (targetMonth === currentMonth && targetYear === currentYear);
     
     // Calculate percentage of budget used
     const percentageUsed = budgetAmount > 0 ? (expenseAmount / budgetAmount) * 100 : 0;
@@ -131,7 +144,13 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
       // Make sure to format with commas as thousands separators
       const formattedBudget = budgetAmount.toLocaleString('vi-VN');
       const percentFormatted = percentageUsed.toFixed(0);
-      const message = `Chi tiêu tháng này đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
+      
+      // Create different message based on whether it's the current month
+      const monthText = isCurrentMonth 
+        ? "tháng này" 
+        : `tháng ${targetMonth}/${targetYear}`;
+      
+      const message = `Chi tiêu ${monthText} đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
       
       // Check if similar alert already exists before creating a new one
       const alertExists = await checkAlertExists(message);
@@ -149,7 +168,9 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
         data: {
           spent: expenseAmount,
           budget: budgetAmount,
-          percentage: Math.round(percentageUsed)
+          percentage: Math.round(percentageUsed),
+          month: targetMonth,
+          year: targetYear
         }
       };
 
@@ -203,8 +224,10 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
  * @param {number} categoryBudget - Category budget limit
  * @param {string} categoryName - Category name
  * @param {string|number} categoryId - Category ID
+ * @param {number} month - Month number (1-12)
+ * @param {number} year - Year
  */
-export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget, categoryName, categoryId) => {
+export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget, categoryName, categoryId, month = null, year = null) => {
   try {
     console.log('DEBUG - INSIDE checkCategoryBudgetWarning function');
     console.log('categoryId:', categoryId);
@@ -215,6 +238,17 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
     // Convert values to numbers if they're not already and ensure they're valid
     const expenseAmount = Number(categoryExpense) || 0;
     const budgetAmount = Number(categoryBudget) || 0;
+    
+    // Get current month/year for comparison
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear();
+    
+    // Use provided month/year or default to current
+    const targetMonth = month || currentMonth;
+    const targetYear = year || currentYear;
+    
+    const isCurrentMonth = (targetMonth === currentMonth && targetYear === currentYear);
     
     // Calculate percentage of budget used
     const percentageUsed = budgetAmount > 0 ? (expenseAmount / budgetAmount) * 100 : 0;
@@ -227,7 +261,13 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
       // Make sure to format with commas as thousands separators
       const formattedBudget = budgetAmount.toLocaleString('vi-VN');
       const percentFormatted = percentageUsed.toFixed(0);
-      const message = `Chi tiêu danh mục "${categoryName}" đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
+      
+      // Create different message based on whether it's the current month
+      const monthText = isCurrentMonth 
+        ? "tháng này" 
+        : `tháng ${targetMonth}/${targetYear}`;
+      
+      const message = `Chi tiêu danh mục "${categoryName}" ${monthText} đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
       
       // Check if similar alert already exists before creating a new one
       const alertExists = await checkAlertExists(message);
@@ -247,7 +287,9 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
           category: categoryName,
           spent: expenseAmount,
           budget: budgetAmount,
-          percentage: Math.round(percentageUsed)
+          percentage: Math.round(percentageUsed),
+          month: targetMonth,
+          year: targetYear
         }
       };
 
@@ -320,16 +362,30 @@ export const checkAlertExists = async (message) => {
  * Check if monthly expense exceeds budget
  * @param {number} totalExpense - Total expense amount
  * @param {number} budgetLimit - Budget limit amount
+ * @param {number} month - Month number (1-12)
+ * @param {number} year - Year
  */
-export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
+export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit, month = null, year = null) => {
   try {
     console.log('DEBUG - Checking monthly budget alert:');
     console.log('totalExpense:', totalExpense, 'type:', typeof totalExpense);
     console.log('budgetLimit:', budgetLimit, 'type:', typeof budgetLimit);
+    console.log('month:', month, 'year:', year);
 
     // Convert values to numbers if they're not already and ensure they're valid
     const expenseAmount = Number(totalExpense) || 0;
     const budgetAmount = Number(budgetLimit) || 0;
+    
+    // Get current month/year for comparison
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear();
+    
+    // Use provided month/year or default to current
+    const targetMonth = month || currentMonth;
+    const targetYear = year || currentYear;
+    
+    const isCurrentMonth = (targetMonth === currentMonth && targetYear === currentYear);
     
     // STRICT VALIDATION: If budget is set and spending ACTUALLY exceeds it
     // Only create alert if expense is TRULY greater than budget
@@ -338,7 +394,13 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
       
       // Make sure to format with commas as thousands separators
       const formattedBudget = budgetAmount.toLocaleString('vi-VN');
-      const message = `Chi tiêu tháng này đã vượt ngân sách ${formattedBudget}₫`;
+      
+      // Create different message based on whether it's the current month
+      const monthText = isCurrentMonth 
+        ? "tháng này" 
+        : `tháng ${targetMonth}/${targetYear}`;
+      
+      const message = `Chi tiêu ${monthText} đã vượt ngân sách ${formattedBudget}₫`;
       
       // Check if similar alert already exists before creating a new one
       const alertExists = await checkAlertExists(message);
@@ -356,7 +418,9 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
         data: {
           spent: expenseAmount,
           budget: budgetAmount,
-          percentage: Math.round((expenseAmount / budgetAmount) * 100)
+          percentage: Math.round((expenseAmount / budgetAmount) * 100),
+          month: targetMonth,
+          year: targetYear
         }
       };
 
@@ -378,15 +442,14 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
       }
       
       return alert;
-    } else {
-      // Log why alert wasn't created
-      if (budgetAmount <= 0) {
-        console.log(`DEBUG - No monthly alert: Budget amount invalid (${budgetAmount})`);
-      } else if (expenseAmount <= budgetAmount) {
-        console.log(`DEBUG - No monthly alert: Expense (${expenseAmount}) <= Budget (${budgetAmount})`);
-      }
-      return null;
     }
+    // Log why alert wasn't created
+    if (budgetAmount <= 0) {
+      console.log(`DEBUG - No monthly alert: Budget amount invalid (${budgetAmount})`);
+    } else if (expenseAmount <= budgetAmount) {
+      console.log(`DEBUG - No monthly alert: Expense (${expenseAmount}) <= Budget (${budgetAmount})`);
+    }
+    return null;
   } catch (error) {
     console.error('Error checking budget alert:', error);
     return null; // Return null instead of throwing to prevent UI breaking
@@ -399,14 +462,27 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
  * @param {number} categoryBudget - Category budget limit
  * @param {string} categoryName - Category name
  * @param {string|number} categoryId - Category ID
+ * @param {number} month - Month number (1-12)
+ * @param {number} year - Year
  */
-export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, categoryName, categoryId) => {
+export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, categoryName, categoryId, month = null, year = null) => {
   try {
     console.log('DEBUG - INSIDE checkCategoryBudgetAlert function');
     
     // Convert values to numbers if they're not already and ensure they're valid
     const expenseAmount = Number(categoryExpense) || 0;
     const budgetAmount = Number(categoryBudget) || 0;
+    
+    // Get current month/year for comparison
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear();
+    
+    // Use provided month/year or default to current
+    const targetMonth = month || currentMonth;
+    const targetYear = year || currentYear;
+    
+    const isCurrentMonth = (targetMonth === currentMonth && targetYear === currentYear);
     
     // Calculate percentage used
     const percentageUsed = budgetAmount > 0 ? (expenseAmount / budgetAmount) * 100 : 0;
@@ -418,7 +494,13 @@ export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, 
       
       // Make sure to format with commas as thousands separators
       const formattedBudget = budgetAmount.toLocaleString('vi-VN');
-      const message = `Chi tiêu danh mục "${categoryName}" đã vượt ngân sách ${formattedBudget}₫`;
+      
+      // Create different message based on whether it's the current month
+      const monthText = isCurrentMonth 
+        ? "tháng này" 
+        : `tháng ${targetMonth}/${targetYear}`;
+      
+      const message = `Chi tiêu danh mục "${categoryName}" ${monthText} đã vượt ngân sách ${formattedBudget}₫`;
       
       // Check if similar alert already exists before creating a new one
       const alertExists = await checkAlertExists(message);
@@ -438,7 +520,9 @@ export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, 
           category: categoryName,
           spent: expenseAmount,
           budget: budgetAmount,
-          percentage: Math.round((expenseAmount / budgetAmount) * 100)
+          percentage: Math.round((expenseAmount / budgetAmount) * 100),
+          month: targetMonth,
+          year: targetYear
         }
       };
 
@@ -482,10 +566,19 @@ export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, 
  * @param {Object} budget - Monthly budget data
  * @param {Array} categoryBudgets - Category budget data
  * @param {Array} categoryExpenses - Category expense data
+ * @param {number} month - Month number (1-12)
+ * @param {number} year - Year
  */
-export const generateAlerts = async (statistics, budget, categoryBudgets, categoryExpenses) => {
+export const generateAlerts = async (statistics, budget, categoryBudgets, categoryExpenses, month = null, year = null) => {
   try {
     const alerts = [];
+    
+    // Get current month/year if not provided
+    const currentDate = new Date();
+    const targetMonth = month || currentDate.getMonth() + 1; // 1-12
+    const targetYear = year || currentDate.getFullYear();
+    
+    console.log(`Generating alerts for month: ${targetMonth}, year: ${targetYear}`);
     
     // Check total monthly budget - exceeded
     if (budget) {
@@ -494,12 +587,12 @@ export const generateAlerts = async (statistics, budget, categoryBudgets, catego
       const totalExpense = statistics?.totalExpense || 0;
       
       // First check if budget is exceeded
-      const budgetAlert = await checkMonthlyBudgetAlert(totalExpense, budgetAmount);
+      const budgetAlert = await checkMonthlyBudgetAlert(totalExpense, budgetAmount, targetMonth, targetYear);
       if (budgetAlert) alerts.push(budgetAlert);
       
       // If not exceeded, check if approaching limit (90%)
       if (!budgetAlert) {
-        const budgetWarning = await checkMonthlyBudgetWarning(totalExpense, budgetAmount);
+        const budgetWarning = await checkMonthlyBudgetWarning(totalExpense, budgetAmount, targetMonth, targetYear);
         if (budgetWarning) alerts.push(budgetWarning);
       }
     }
@@ -569,7 +662,9 @@ export const generateAlerts = async (statistics, budget, categoryBudgets, catego
                 expenseAmount, 
                 budgetAmount, 
                 categoryName,
-                budgetCategoryId
+                budgetCategoryId,
+                targetMonth,
+                targetYear
               );
               
               if (catAlert) {
@@ -585,7 +680,9 @@ export const generateAlerts = async (statistics, budget, categoryBudgets, catego
                   expenseAmount,
                   budgetAmount,
                   categoryName,
-                  budgetCategoryId
+                  budgetCategoryId,
+                  targetMonth,
+                  targetYear
                 );
                 
                 if (catWarning) {
