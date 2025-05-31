@@ -31,11 +31,25 @@ export const getUserAlerts = async () => {
 /**
  * Create a new alert
  * @param {Object} alertData - Alert data to create
+ * @param {boolean} showToast - Whether to show a toast notification (default: false)
  */
-export const createAlert = async (alertData) => {
+export const createAlert = async (alertData, showToast = false) => {
   try {
     console.log('DEBUG - Creating alert with data:', alertData);
     const response = await axios.post(`${API_URL}/alerts/create`, alertData);
+    
+    // Only show toast if explicitly requested (for direct alert creation, not for budget alerts)
+    if (showToast && alertData.message) {
+      toast.info(`⚠️ ${alertData.message}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
+    }
+    
     // Dispatch an event to notify components that alerts have been updated
     window.dispatchEvent(new Event('alertsUpdated'));
     return response.data;
@@ -119,6 +133,13 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
       const percentFormatted = percentageUsed.toFixed(0);
       const message = `Chi tiêu tháng này đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
       
+      // Check if similar alert already exists before creating a new one
+      const alertExists = await checkAlertExists(message);
+      if (alertExists) {
+        console.log('DEBUG - Similar monthly budget warning already exists, skipping');
+        return null;
+      }
+      
       // Create the alert
       const alert = {
         message,
@@ -134,9 +155,9 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
 
       console.log('DEBUG - Monthly budget warning created:', alert);
       
-      // Show toast notification for the alert - Ensure this is being displayed
+      // Show toast notification for the warning - We DO want to show this
       const toastMessage = `⚠️ ${message}`;
-      toast.info(toastMessage, {
+      toast.warning(toastMessage, {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -152,7 +173,7 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit) => {
           type: alert.type,
           triggered_at: alert.triggered_at
         };
-        const result = await createAlert(alertToCreate);
+        const result = await createAlert(alertToCreate, false); // Don't show toast again when saving to database
         console.log('DEBUG - Monthly budget warning saved to database:', result);
       } catch (err) {
         console.error('Failed to save warning alert to database:', err);
@@ -208,6 +229,13 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
       const percentFormatted = percentageUsed.toFixed(0);
       const message = `Chi tiêu danh mục "${categoryName}" đã đạt ${percentFormatted}% ngân sách ${formattedBudget}₫`;
       
+      // Check if similar alert already exists before creating a new one
+      const alertExists = await checkAlertExists(message);
+      if (alertExists) {
+        console.log('DEBUG - Similar category budget warning already exists, skipping');
+        return null;
+      }
+      
       // Create the alert
       const alert = {
         message,
@@ -225,9 +253,9 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
 
       console.log('DEBUG - Category budget warning created:', alert);
       
-      // Show toast notification for the alert - Ensure this is being displayed
+      // Show toast notification for the warning - We DO want to show this
       const toastMessage = `⚠️ ${message}`;
-      toast.info(toastMessage, {
+      toast.warning(toastMessage, {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -243,10 +271,10 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
           type: alert.type,
           triggered_at: alert.triggered_at
         };
-        const result = await createAlert(alertToCreate);
+        const result = await createAlert(alertToCreate, false); // Don't show toast again when saving to database
         console.log('DEBUG - Category budget warning saved to database:', result);
       } catch (err) {
-        console.error('Failed to save category warning alert to database:', err);
+        console.error('Failed to save warning alert to database:', err);
       }
       
       return alert;
@@ -334,24 +362,8 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
 
       console.log('DEBUG - Monthly budget alert created:', alert);
       
-      // Show toast notification for the alert - ALWAYS DISPLAY REGARDLESS OF DATABASE OPERATION
-      const toastMessage = `⚠️ ${message}`;
-      
-      // Hiển thị toast trước khi lưu vào database để đảm bảo người dùng luôn nhìn thấy
-      try {
-        // Sử dụng toast.error thay vì toast.warning để có nền đỏ thay vì nền vàng
-        toast.error(toastMessage, {
-          position: "top-right",
-          autoClose: 8000, // Longer display time
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true
-        });
-        console.log('DEBUG - Toast notification displayed successfully for monthly alert');
-      } catch (toastError) {
-        console.error('ERROR displaying toast notification:', toastError);
-      }
+      // NOTE: Toast notification is now handled by the transaction creation code
+      // No need to show toast here to avoid duplication
       
       // Create the alert in the database - only send the required fields
       try {
@@ -360,7 +372,7 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit) => {
           type: alert.type,
           triggered_at: alert.triggered_at
         };
-        await createAlert(alertToCreate);
+        await createAlert(alertToCreate, false); // Explicitly set showToast to false
       } catch (err) {
         console.error('Failed to save alert to database:', err);
       }
@@ -432,24 +444,8 @@ export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, 
 
       console.log('DEBUG - Category budget alert created:', alert);
       
-      // Show toast notification for the alert - ALWAYS DISPLAY REGARDLESS OF DATABASE OPERATION
-      const toastMessage = `⚠️ ${message}`;
-      
-      // Hiển thị toast trước khi lưu vào database để đảm bảo người dùng luôn nhìn thấy
-      try {
-        // Sử dụng toast.error thay vì toast.warning để có nền đỏ thay vì nền vàng
-        toast.error(toastMessage, {
-          position: "top-right",
-          autoClose: 8000, // Longer display time
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true
-        });
-        console.log('DEBUG - Toast notification displayed successfully for category alert');
-      } catch (toastError) {
-        console.error('ERROR displaying toast notification:', toastError);
-      }
+      // NOTE: Toast notification is now handled by the transaction creation code
+      // No need to show toast here to avoid duplication
       
       // Create the alert in the database - only send the required fields
       try {
@@ -458,7 +454,7 @@ export const checkCategoryBudgetAlert = async (categoryExpense, categoryBudget, 
           type: alert.type,
           triggered_at: alert.triggered_at
         };
-        const result = await createAlert(alertToCreate);
+        const result = await createAlert(alertToCreate, false); // Explicitly set showToast to false
         console.log('DEBUG - Category budget alert saved to database:', result);
       } catch (err) {
         console.error('Failed to save alert to database:', err);

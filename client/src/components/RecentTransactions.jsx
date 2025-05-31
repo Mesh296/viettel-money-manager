@@ -13,9 +13,17 @@ const RecentTransactions = () => {
     const fetchRecentTransactions = async () => {
       try {
         setLoading(true);
-        // Lấy 5 giao dịch gần nhất
-        const data = await getCurrentUserTransactions({ limit: 5 });
-        setTransactions(data);
+        // Lấy 3 giao dịch gần nhất
+        const data = await getCurrentUserTransactions({ limit: 3 });
+        
+        // Sort by createdAt date, newest first
+        const sortedData = Array.isArray(data) ? [...data].sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.date);
+          const dateB = new Date(b.createdAt || b.date);
+          return dateB - dateA;
+        }) : [];
+        
+        setTransactions(sortedData);
         setError(null);
       } catch (error) {
         console.error('Error loading recent transactions:', error);

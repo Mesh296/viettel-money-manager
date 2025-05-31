@@ -5,6 +5,7 @@ import { getAllCategories } from '../services/categories';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../services/config';
+import styled from 'styled-components';
 
 // Helper to format month as expected by backend
 const formatMonth = (monthNum, year = new Date().getFullYear()) => {
@@ -57,7 +58,7 @@ const Budgets = () => {
   
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.abs(amount || 0));
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
   
   // Format month for display
@@ -295,11 +296,25 @@ const Budgets = () => {
       try {
         setLoading(true);
         
-        // Get all categories
-        const categoriesData = await getAllCategories();
-        setCategories(categoriesData || []);
-        
-        console.log('Fetched categories:', categoriesData);
+        // Get all categories with better error handling
+        try {
+          console.log('Fetching categories...');
+          const categoriesData = await getAllCategories();
+          
+          // Validate the categories data
+          if (!Array.isArray(categoriesData)) {
+            console.error('Categories data is not an array:', categoriesData);
+            toast.error('Định dạng dữ liệu danh mục không hợp lệ');
+            setCategories([]);
+          } else {
+            console.log(`Fetched ${categoriesData.length} categories successfully:`, categoriesData);
+            setCategories(categoriesData);
+          }
+        } catch (catError) {
+          console.error('Failed to load categories:', catError);
+          toast.error('Không thể tải danh sách danh mục. Vui lòng thử lại sau.');
+          setCategories([]);
+        }
         
         // Kiểm tra xem có phải tháng hiện tại không
         const isCurrentMonthSelected = checkIsCurrentMonth(selectedMonth, selectedYear);
@@ -598,261 +613,577 @@ const Budgets = () => {
   
   return (
     <MainLayout>
-      <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Ngân sách</h1>
-        
-        <div className="mb-6 p-4 bg-blue-50 rounded-md">
-          <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý ngân sách</h2>
-          <p className="text-gray-600">
-            Tại đây bạn có thể thiết lập ngân sách hàng tháng và theo dõi tình hình chi tiêu.
-            Đặt hạn mức chi tiêu để quản lý tài chính hiệu quả hơn.
-          </p>
-        </div>
-        
-        {/* Bộ chọn tháng và năm */}
-        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-          <h2 className="text-lg font-medium text-gray-900 mb-3">Chọn tháng xem ngân sách</h2>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="sm:w-1/4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                  <option key={month} value={month}>
-                    {`Tháng ${month}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:w-1/4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              >
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            {!isCurrentMonth && (
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  onClick={() => {
-                    setSelectedMonth(currentDate.getMonth() + 1);
-                    setSelectedYear(currentDate.getFullYear());
+      <StyledBudgets>
+        <div className="container">
+          <h1 className="page-title">Quản lý ngân sách {formatMonthDisplay(selectedMonth, selectedYear)}</h1>
+          
+          {/* Month/Year Selection */}
+          <div className="budget-card">
+            <h2>Chọn tháng</h2>
+            
+            <div className="form-row">
+              <div className="input-group">
+                <label className="input-label" htmlFor="month-select">Tháng:</label>
+                <select 
+                  id="month-select"
+                  className="select-input"
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    const newMonth = Number(e.target.value);
+                    setSelectedMonth(newMonth);
+                    setIsCurrentMonth(checkIsCurrentMonth(newMonth, selectedYear));
                   }}
                 >
-                  Về tháng hiện tại
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                    <option key={month} value={month}>Tháng {month}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="input-group">
+                <label className="input-label" htmlFor="year-select">Năm:</label>
+                <select 
+                  id="year-select"
+                  className="select-input"
+                  value={selectedYear}
+                  onChange={(e) => {
+                    const newYear = Number(e.target.value);
+                    setSelectedYear(newYear);
+                    setIsCurrentMonth(checkIsCurrentMonth(selectedMonth, newYear));
+                  }}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <button 
+                className="action-btn"
+                onClick={() => {
+                  if (!isCurrentMonth) {
+                    setSelectedMonth(currentDate.getMonth() + 1);
+                    setSelectedYear(currentDate.getFullYear());
+                    setIsCurrentMonth(true);
+                  }
+                }}
+                disabled={isCurrentMonth}
+              >
+                Tháng hiện tại
+              </button>
+              
+              {loading && (
+                <div className="loading-spinner-small"></div>
+              )}
+            </div>
+          </div>
+          
+          {/* Monthly Budget Form */}
+          <div className="budget-card">
+            <h2>Ngân sách tổng</h2>
+            
+            <form onSubmit={handleMonthlyBudgetSubmit}>
+              <div className="form-row">
+                <div className="input-group">
+                  <label className="input-label" htmlFor="budget-amount">
+                    Ngân sách tháng {formatMonthDisplay(selectedMonth, selectedYear)}:
+                  </label>
+                  <input
+                    id="budget-amount"
+                    type="number"
+                    className="text-input"
+                    placeholder="Nhập số tiền"
+                    value={newBudgetAmount}
+                    onChange={(e) => setNewBudgetAmount(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <button 
+                  type="submit"
+                  className="submit-btn"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang xử lý...' : 'Cập nhật'}
                 </button>
               </div>
-            )}
+              
+              {monthlyBudget && monthlyBudget.amount > 0 && (
+                <div className="budget-summary">
+                  <div className="summary-row">
+                    <span>Ngân sách hiện tại:</span>
+                    <span className="amount">{formatCurrency(monthlyBudget.amount)}</span>
+                  </div>
+                  
+                  <div className="summary-row">
+                    <span>Đã chi tiêu:</span>
+                    <span className="amount expense">{formatCurrency(monthlyBudget.spent)}</span>
+                  </div>
+                  
+                  <div className="summary-row">
+                    <span>Còn lại:</span>
+                    <span className={`amount ${monthlyBudget.amount - monthlyBudget.spent >= 0 ? 'remaining' : 'over-budget'}`}>
+                      {formatCurrency(monthlyBudget.amount - monthlyBudget.spent)}
+                    </span>
+                  </div>
+                  
+                  <div className="progress-container">
+                    <div className="progress-bar">
+                      <div
+                        className={`progress ${monthlyBudget.spent / monthlyBudget.amount > 0.9 ? 'danger' : monthlyBudget.spent / monthlyBudget.amount > 0.7 ? 'warning' : 'safe'}`}
+                        style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
+                      ></div>
+                    </div>
+                    <div className="progress-label">
+                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}% sử dụng
+                    </div>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+          
+          {/* Category Budget Form */}
+          <div className="budget-card">
+            <h2>Ngân sách theo danh mục</h2>
+            
+            <form onSubmit={handleCategoryBudgetSubmit}>
+              <div className="form-row">
+                <div className="input-group">
+                  <label className="input-label" htmlFor="category-select">Danh mục:</label>
+                  <select
+                    id="category-select"
+                    className="select-input"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories && categories.length > 0 ? (
+                      categories
+                        // Include all categories except known income types
+                        .filter(cat => {
+                          // If the category has a type, filter by expense type
+                          if (cat.type) {
+                            return cat.type === 'expense';
+                          }
+                          // If no type, filter out known income category names
+                          const incomeCategories = ['Salary', 'Investment', 'Side Income', 'Gift', 'Refund', 'Other Income', 'Savings/Investment'];
+                          return !incomeCategories.includes(cat.name);
+                        })
+                        .map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))
+                    ) : (
+                      <option value="" disabled>Không có danh mục chi tiêu nào</option>
+                    )}
+                  </select>
+                </div>
+                
+                <div className="input-group">
+                  <label className="input-label" htmlFor="category-budget-amount">Ngân sách:</label>
+                  <input
+                    id="category-budget-amount"
+                    type="number"
+                    className="text-input"
+                    placeholder="Nhập số tiền"
+                    value={categoryBudgetAmount}
+                    onChange={(e) => setCategoryBudgetAmount(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <button 
+                  type="submit"
+                  className="submit-btn"
+                  disabled={loading || !selectedCategory}
+                >
+                  {loading ? 'Đang xử lý...' : 'Thêm'}
+                </button>
+              </div>
+            </form>
+            
+            <div className="category-budgets-container">
+              <h3>Danh sách ngân sách theo danh mục</h3>
+              
+              {loading ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <span>Đang tải dữ liệu...</span>
+                </div>
+              ) : categoryBudgets.length === 0 ? (
+                <p className="empty-message">Chưa có ngân sách nào được thiết lập cho tháng này</p>
+              ) : (
+                <div className="budget-table-container">
+                  <table className="budget-table">
+                    <thead>
+                      <tr>
+                        <th>Danh mục</th>
+                        <th>Ngân sách</th>
+                        <th>Đã chi tiêu</th>
+                        <th>Còn lại</th>
+                        <th>Tiến độ</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categoryBudgets.map((budget) => {
+                        const categoryName = getCategoryName(budget.categoryId);
+                        const spent = getCategorySpent(budget.categoryId);
+                        // Check which property contains the budget value (could be budget or budget_limit)
+                        const budgetAmount = budget.budget_limit || budget.budget || 0;
+                        const remaining = budgetAmount - spent;
+                        const percentUsed = budgetAmount <= 0 ? 
+                          (spent > 0 ? 100 : 0) : // If budget is 0, show 100% if spent > 0, otherwise 0%
+                          calculatePercentage(spent, budgetAmount);
+                        
+                        // Determine progress bar class based on conditions
+                        let progressClass = 'safe';
+                        if (spent > 0 && budgetAmount <= 0) {
+                          progressClass = 'danger';
+                        } else if (percentUsed > 90) {
+                          progressClass = 'danger';
+                        } else if (percentUsed > 70) {
+                          progressClass = 'warning';
+                        }
+                        
+                        return (
+                          <tr key={budget.id}>
+                            <td>{categoryName}</td>
+                            <td>{formatCurrency(budgetAmount)}</td>
+                            <td>{formatCurrency(spent)}</td>
+                            <td className={remaining >= 0 ? 'remaining' : 'over-budget'}>
+                              {formatCurrency(remaining)}
+                            </td>
+                            <td>
+                              <div className="progress-bar">
+                                <div
+                                  className={`progress ${progressClass}`}
+                                  style={{ width: `${percentUsed}%` }}
+                                ></div>
+                              </div>
+                              <span className="progress-text">{percentUsed}%</span>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleDeleteCategoryBudget(budget.id)}
+                                className="delete-btn"
+                                title="Xóa ngân sách danh mục này"
+                              >
+                                Xóa
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        
-        {/* Ngân sách tổng */}
-        <div className="mb-6 border border-gray-200 rounded-lg p-4">
-          <h2 className="text-lg font-medium text-gray-900 mb-3">
-            {isCurrentMonth ? 'Ngân sách tháng này' : `Ngân sách ${formatMonthDisplay(selectedMonth, selectedYear)}`}
-          </h2>
-          
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Đang tải...</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="mb-4">
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">
-                    {isCurrentMonth ? (
-                      `Chi tiêu: ${formatCurrency(monthlyBudget.spent)} / ${formatCurrency(monthlyBudget.amount)}`
-                    ) : (
-                      `Ngân sách: ${formatCurrency(monthlyBudget.amount)}`
-                    )}
-                  </span>
-                  {isCurrentMonth && (
-                    <span className="text-sm font-medium text-gray-700">
-                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%
-                    </span>
-                  )}
-                </div>
-                {isCurrentMonth && (
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
-                      style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-              
-              <form onSubmit={handleMonthlyBudgetSubmit} className="mt-4">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex-grow">
-                    <input
-                      type="number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={`Nhập ngân sách cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
-                      value={newBudgetAmount}
-                      onChange={(e) => setNewBudgetAmount(e.target.value)}
-                      min="1"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Cập nhật
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-        
-        {/* Ngân sách theo danh mục */}
-        <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            {isCurrentMonth 
-              ? 'Ngân sách theo danh mục tháng này' 
-              : `Ngân sách theo danh mục ${formatMonthDisplay(selectedMonth, selectedYear)}`}
-          </h2>
-          
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Đang tải...</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <form id="budget-form" onSubmit={handleCategoryBudgetSubmit} className="mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      required
-                    >
-                      <option value="">Chọn danh mục</option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={`Nhập hạn mức cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
-                      value={categoryBudgetAmount}
-                      onChange={(e) => setCategoryBudgetAmount(e.target.value)}
-                      min="1"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      Đặt hạn mức
-                    </button>
-                  </div>
-                </div>
-              </form>
-              
-              <div className="space-y-4">
-                {categoryBudgets.length > 0 ? (
-                  categoryBudgets.map(budget => {
-                    // Get the actual spending for this category
-                    const spent = getCategorySpent(budget.categoryId);
-                    // Get the budget limit (always positive)
-                    const limit = Math.abs(budget.budget_limit || 0);
-                    
-                    return (
-                      <div key={`budget-${budget.id || budget.categoryId}`} className="p-3 border border-gray-200 rounded">
-                        <h3 className="font-medium text-gray-800">{getCategoryName(budget.categoryId)}</h3>
-                        <div className="flex justify-between mb-1 mt-2">
-                          <span className="text-sm text-gray-700">
-                            {isCurrentMonth 
-                              ? `Chi tiêu: ${formatCurrency(spent)} / ${formatCurrency(limit)}`
-                              : `Hạn mức: ${formatCurrency(limit)}`
-                            }
-                          </span>
-                          {isCurrentMonth && (
-                            <span className="text-sm text-gray-700">
-                              {calculatePercentage(spent, limit)}%
-                            </span>
-                          )}
-                        </div>
-                        {isCurrentMonth && (
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                calculatePercentage(spent, limit) > 90 
-                                  ? 'bg-red-500' 
-                                  : calculatePercentage(spent, limit) > 70 
-                                    ? 'bg-yellow-500' 
-                                    : 'bg-green-500'
-                              }`} 
-                              style={{ width: `${calculatePercentage(spent, limit)}%` }}
-                            ></div>
-                          </div>
-                        )}
-                        <div className="mt-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(budget.categoryId);
-                              setCategoryBudgetAmount(Math.abs(budget.budget_limit || ''));
-                              window.scrollTo({
-                                top: document.getElementById('budget-form')?.offsetTop - 100 || 0,
-                                behavior: 'smooth'
-                              });
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-800 mr-4"
-                          >
-                            Cập nhật
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCategoryBudget(budget.id)}
-                            className="text-sm text-red-600 hover:text-red-800"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-gray-600 italic">
-                    {isCurrentMonth 
-                      ? 'Chưa có hạn mức danh mục nào được thiết lập cho tháng này.'
-                      : `Chưa có hạn mức danh mục nào được thiết lập cho ${formatMonthDisplay(selectedMonth, selectedYear)}.`
-                    }
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      </StyledBudgets>
     </MainLayout>
   );
 };
+
+// Add the styled component definition
+const StyledBudgets = styled.div`
+  --input-focus: #5A67D8;
+  --font-color: #2D3748;
+  --font-color-sub: #4A5568;
+  --bg-color: #FFF;
+  --bg-color-alt: #FFF5E9;
+  --main-color: #2D3748;
+  --green-color: #48BB78;
+  --red-color: #F56565;
+  --yellow-color: #F6E05E;
+  
+  padding: 20px;
+  background-color: var(--bg-color-alt);
+  min-height: 100%;
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--main-color);
+    margin-bottom: 24px;
+  }
+  
+  .section {
+    margin-bottom: 30px;
+    
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 16px;
+    }
+  }
+  
+  .budget-card {
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px var(--main-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    h2, h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 16px;
+    }
+  }
+  
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .input-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--font-color);
+  }
+  
+  .text-input, .select-input {
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 2px 2px var(--main-color);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--font-color);
+    outline: none;
+    
+    &:focus {
+      border-color: var(--input-focus);
+    }
+  }
+  
+  .submit-btn, .action-btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--input-focus);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .budget-summary {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #E2E8F0;
+  }
+  
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 600;
+    
+    .amount {
+      &.expense {
+        color: var(--red-color);
+      }
+      
+      &.remaining {
+        color: var(--green-color);
+      }
+      
+      &.over-budget {
+        color: var(--red-color);
+      }
+    }
+  }
+  
+  .progress-container {
+    margin-top: 16px;
+  }
+  
+  .progress-bar {
+    height: 8px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+    
+    .progress {
+      height: 100%;
+      border-radius: 4px;
+      
+      &.safe {
+        background-color: var(--green-color);
+      }
+      
+      &.warning {
+        background-color: var(--yellow-color);
+      }
+      
+      &.danger {
+        background-color: var(--red-color);
+      }
+    }
+  }
+  
+  .progress-label {
+    text-align: right;
+    font-size: 12px;
+    color: var(--font-color-sub);
+  }
+  
+  .progress-text {
+    font-size: 12px;
+    color: var(--font-color-sub);
+    margin-left: 6px;
+  }
+  
+  .category-budgets-container {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #E2E8F0;
+  }
+  
+  .empty-message {
+    text-align: center;
+    padding: 20px 0;
+    color: var(--font-color-sub);
+    font-style: italic;
+  }
+  
+  .budget-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 16px;
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    
+    th {
+      font-weight: 700;
+      color: var(--font-color);
+      background-color: rgba(90, 103, 216, 0.1);
+    }
+    
+    .remaining {
+      color: var(--green-color);
+    }
+    
+    .over-budget {
+      color: var(--red-color);
+    }
+    
+    tbody tr:hover {
+      background-color: rgba(90, 103, 216, 0.05);
+    }
+  }
+  
+  .delete-btn {
+    padding: 6px 12px;
+    border-radius: 5px;
+    border: 2px solid var(--red-color);
+    background-color: rgba(245, 101, 101, 0.1);
+    color: var(--red-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover:not(:disabled) {
+      background-color: var(--red-color);
+      color: white;
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(90, 103, 216, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--input-focus);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 16px;
+  }
+  
+  .loading-spinner-small {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(90, 103, 216, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--input-focus);
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+    
+    .form-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .budget-table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+`;
 
 export default Budgets;

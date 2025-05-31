@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../services/config';
 import { Link } from 'react-router-dom';
+import styled from 'styled-components';
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
@@ -200,38 +201,6 @@ const Alerts = () => {
 
   // Helper function to render alert based on type
   const renderAlert = (alert) => {
-    let bgColor = 'bg-yellow-50';
-    let borderColor = 'border-yellow-200';
-    let textColor = 'text-yellow-800';
-    let descColor = 'text-yellow-700';
-    let iconColor = 'text-yellow-400';
-    
-    if (alert.type === 'total_limit') {
-      bgColor = 'bg-red-50';
-      borderColor = 'border-red-200';
-      textColor = 'text-red-800';
-      descColor = 'text-red-700';
-      iconColor = 'text-red-400';
-    } else if (alert.type === 'approaching_total_limit') {
-      bgColor = 'bg-yellow-50';
-      borderColor = 'border-yellow-200';
-      textColor = 'text-yellow-800';
-      descColor = 'text-yellow-700';
-      iconColor = 'text-yellow-400';
-    } else if (alert.type === 'category_limit') {
-      bgColor = 'bg-orange-50';
-      borderColor = 'border-orange-200';
-      textColor = 'text-orange-800';
-      descColor = 'text-orange-700';
-      iconColor = 'text-orange-400';
-    } else if (alert.type === 'income_vs_expense') {
-      bgColor = 'bg-blue-50';
-      borderColor = 'border-blue-200';
-      textColor = 'text-blue-800';
-      descColor = 'text-blue-700';
-      iconColor = 'text-blue-400';
-    }
-
     // Make sure we have a valid date
     let formattedDate = '';
     try {
@@ -242,151 +211,391 @@ const Alerts = () => {
     }
     
     return (
-      <div key={alert.alertId || `alert-${Math.random()}`} className={`p-4 ${bgColor} border ${borderColor} rounded-md ${alert.isDeleting ? 'opacity-50' : ''}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <svg className={`h-5 w-5 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div 
+        key={alert.alertId || `alert-${Math.random()}`} 
+        className={`alert-item ${alert.type} ${alert.isDeleting ? 'deleting' : ''}`}
+      >
+        <div className="alert-content">
+          <div className="alert-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h3 className={`ml-2 text-sm font-medium ${textColor}`}>{alert.message}</h3>
           </div>
-          
-          {/* Delete button */}
-          <button 
-            onClick={() => handleDeleteAlert(alert.alertId)}
-            disabled={deleteLoading || alert.isDeleting}
-            className={`text-gray-400 hover:text-red-500 transition-colors ${alert.isDeleting ? 'cursor-not-allowed opacity-50' : ''}`}
-            title="Xóa cảnh báo"
-          >
-            {alert.isDeleting ? (
-              <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            )}
-          </button>
+          <div className="alert-message">
+            <p className="message">{alert.message || "Cảnh báo hệ thống"}</p>
+            <p className="details">
+              {alert.details && <span className="detail-text">{alert.details}</span>}
+              <span className="date">{formattedDate}</span>
+            </p>
+          </div>
         </div>
-        <p className={`mt-2 text-sm ${descColor}`}>
-          Ngày tạo: {formattedDate}
-        </p>
       </div>
     );
   };
 
   return (
     <MainLayout>
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Cảnh báo</h1>
-          <div className="flex space-x-2">
-            {alerts.length > 0 && (
+      <StyledAlerts>
+        <div className="container">
+          <h1 className="page-title">Quản lý cảnh báo</h1>
+          
+          <div className="section">
+            <div className="section-header">
+              <h2 className="section-title">Danh sách cảnh báo</h2>
+              
               <button 
-                onClick={handleDeleteAllAlerts} 
-                className={`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ${bulkDeleteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={bulkDeleteLoading}
+                className="action-btn delete-all"
+                onClick={handleDeleteAllAlerts}
+                disabled={bulkDeleteLoading || alerts.length === 0}
               >
-                {bulkDeleteLoading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Đang xử lý...
-                  </span>
-                ) : 'Xóa tất cả'}
+                {bulkDeleteLoading ? 'Đang xóa...' : 'Xóa tất cả'}
               </button>
-            )}
-            <button 
-              onClick={createTestAlert} 
-              className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ${testLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={testLoading}
-            >
-              {testLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Đang xử lý...
-                </span>
-              ) : 'Tạo cảnh báo thử nghiệm'}
-            </button>
-          </div>
-        </div>
-        
-        <div className="mb-6 p-4 bg-blue-50 rounded-md">
-          <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý cảnh báo</h2>
-          <p className="text-gray-600">
-            Nhận thông báo khi chi tiêu vượt ngân sách. Thiết lập các ngưỡng cảnh báo 
-            cho tổng chi tiêu hoặc chi tiêu theo danh mục.
-          </p>
-        </div>
-        
-        {/* Danh sách cảnh báo */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Cảnh báo hiện tại</h2>
-            <div className="flex space-x-2">
-              <button 
-                onClick={debugAlerts} 
-                className="text-sm text-gray-600 hover:text-gray-800 underline"
-              >
-                Debug
-              </button>
-              <button 
-                onClick={fetchAlerts} 
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                Làm mới
-              </button>
+            </div>
+            
+            <div className="alerts-card">
+              {loading ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <span>Đang tải cảnh báo...</span>
+                </div>
+              ) : alerts.length === 0 ? (
+                <div className="empty-state">
+                  <p>Không có cảnh báo nào.</p>
+                  <p className="subtext">
+                    Cảnh báo sẽ xuất hiện khi bạn vượt quá ngân sách hoặc có các vấn đề về tài chính.
+                  </p>
+                </div>
+              ) : (
+                <div className="alerts-list">
+                  {alerts.map(alert => renderAlert(alert))}
+                </div>
+              )}
             </div>
           </div>
           
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            </div>
-          ) : alerts.length > 0 ? (
-            <div className="space-y-4">
-              {alerts.map(alert => renderAlert(alert))}
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-              <p className="text-gray-600 text-center">Không có cảnh báo nào.</p>
-            </div>
-          )}
-        </div>
-        
-        {/* Thiết lập cảnh báo */}
-        <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Thiết lập cảnh báo</h2>
-          <p className="text-gray-600 italic mb-4">
-            Cảnh báo sẽ được tạo tự động khi:
-          </p>
-          <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
-            <ul className="text-sm text-gray-600 space-y-3 list-disc list-inside">
-              <li>Chi tiêu tháng hiện tại vượt quá ngân sách hàng tháng đã thiết lập</li>
-              <li>Chi tiêu tháng hiện tại đạt trên 90% ngân sách hàng tháng (cảnh báo sớm)</li>
-              <li>Chi tiêu cho một danh mục cụ thể vượt quá ngân sách đã đặt cho danh mục đó</li>
-            </ul>
-            
-            <div className="mt-5 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-700">
-              <p className="font-medium mb-2">Để cảnh báo hoạt động đúng, bạn cần:</p>
-              <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Thiết lập ngân sách hàng tháng trong mục <Link to="/budgets" className="text-blue-600 underline">Ngân sách</Link></li>
-                <li>Thiết lập ngân sách cho từng danh mục chi tiêu</li>
-                <li>Ghi nhận các giao dịch chi tiêu của bạn trong <Link to="/transactions" className="text-blue-600 underline">Giao dịch</Link></li>
-              </ol>
+          <div className="section">
+            <div className="alerts-info-card">
+              <h3>Cài đặt cảnh báo</h3>
+              <p>
+                Bạn có thể cài đặt các ngưỡng cảnh báo và các loại thông báo trong phần Cài đặt.
+              </p>
+              <Link to="/settings" className="settings-link">
+                Đi đến Cài đặt
+              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </StyledAlerts>
     </MainLayout>
   );
 };
+
+const StyledAlerts = styled.div`
+  --input-focus: #5A67D8;
+  --font-color: #2D3748;
+  --font-color-sub: #4A5568;
+  --bg-color: #FFF;
+  --bg-color-alt: #FFF5E9;
+  --main-color: #2D3748;
+  --green-color: #48BB78;
+  --red-color: #F56565;
+  --yellow-color: #F6E05E;
+  --orange-color: #ED8936;
+  --blue-color: #4299E1;
+  
+  padding: 20px;
+  background-color: var(--bg-color-alt);
+  min-height: 100%;
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--main-color);
+    margin-bottom: 24px;
+  }
+  
+  .section {
+    margin-bottom: 30px;
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 16px;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+  }
+  
+  .action-card, .alerts-card, .alerts-info-card {
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px var(--main-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    h2, h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 16px;
+    }
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .action-btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    font-weight: 600;
+    color: var(--font-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    &.create {
+      background-color: var(--green-color);
+      color: white;
+    }
+    
+    &.delete-all {
+      background-color: var(--red-color);
+      color: white;
+    }
+    
+    &.debug {
+      background-color: var(--yellow-color);
+      color: var(--font-color);
+    }
+  }
+  
+  .alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .alert-item {
+    display: flex;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid var(--yellow-color);
+    background-color: rgba(246, 224, 94, 0.1);
+    
+    &.deleting {
+      opacity: 0.6;
+    }
+    
+    &.total_limit {
+      border-left-color: var(--red-color);
+      background-color: rgba(245, 101, 101, 0.1);
+    }
+    
+    &.approaching_total_limit {
+      border-left-color: var(--yellow-color);
+      background-color: rgba(246, 224, 94, 0.1);
+    }
+    
+    &.category_limit {
+      border-left-color: var(--orange-color);
+      background-color: rgba(237, 137, 54, 0.1);
+    }
+    
+    &.income_vs_expense {
+      border-left-color: var(--blue-color);
+      background-color: rgba(66, 153, 225, 0.1);
+    }
+  }
+  
+  .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .alert-icon {
+    width: 24px;
+    height: 24px;
+    
+    svg {
+      width: 100%;
+      height: 100%;
+      
+      .total_limit & {
+        color: var(--red-color);
+      }
+      
+      .approaching_total_limit & {
+        color: var(--yellow-color);
+      }
+      
+      .category_limit & {
+        color: var(--orange-color);
+      }
+      
+      .income_vs_expense & {
+        color: var(--blue-color);
+      }
+    }
+  }
+  
+  .alert-message {
+    .message {
+      font-weight: 600;
+      color: var(--main-color);
+      margin-bottom: 4px;
+    }
+    
+    .details {
+      font-size: 14px;
+      color: var(--font-color-sub);
+      
+      .date {
+        margin-left: 8px;
+        opacity: 0.8;
+      }
+    }
+  }
+  
+  .alert-actions {
+    .delete-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background-color: rgba(0,0,0,0.05);
+      }
+      
+      svg {
+        width: 20px;
+        height: 20px;
+        color: var(--red-color);
+      }
+      
+      .loading-icon {
+        animation: spin 1s linear infinite;
+        stroke: var(--red-color);
+      }
+    }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(90, 103, 216, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--input-focus);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 16px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 0;
+    
+    p {
+      font-size: 16px;
+      color: var(--font-color);
+      margin-bottom: 8px;
+    }
+    
+    .subtext {
+      font-size: 14px;
+      color: var(--font-color-sub);
+    }
+  }
+  
+  .alerts-info-card {
+    background-color: var(--bg-color);
+    
+    p {
+      color: var(--font-color-sub);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    
+    .settings-link {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 5px;
+      background-color: var(--input-focus);
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+    
+    .action-buttons {
+      flex-direction: column;
+      
+      .action-btn {
+        width: 100%;
+      }
+    }
+  }
+`;
 
 export default Alerts; 
