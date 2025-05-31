@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
+import MainLayout from '../components/MainLayout';
 import { getUserAlerts, deleteAlert, deleteAllAlerts } from '../services/alerts';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -278,36 +278,18 @@ const Alerts = () => {
   };
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Cảnh báo</h1>
-            <div className="flex space-x-2">
-              {alerts.length > 0 && (
-                <button 
-                  onClick={handleDeleteAllAlerts} 
-                  className={`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ${bulkDeleteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={bulkDeleteLoading}
-                >
-                  {bulkDeleteLoading ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Đang xử lý...
-                    </span>
-                  ) : 'Xóa tất cả'}
-                </button>
-              )}
+    <MainLayout>
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Cảnh báo</h1>
+          <div className="flex space-x-2">
+            {alerts.length > 0 && (
               <button 
-                onClick={createTestAlert} 
-                className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ${testLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={testLoading}
+                onClick={handleDeleteAllAlerts} 
+                className={`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ${bulkDeleteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={bulkDeleteLoading}
               >
-                {testLoading ? (
+                {bulkDeleteLoading ? (
                   <span className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -315,80 +297,95 @@ const Alerts = () => {
                     </svg>
                     Đang xử lý...
                   </span>
-                ) : 'Tạo cảnh báo thử nghiệm'}
+                ) : 'Xóa tất cả'}
+              </button>
+            )}
+            <button 
+              onClick={createTestAlert} 
+              className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ${testLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={testLoading}
+            >
+              {testLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang xử lý...
+                </span>
+              ) : 'Tạo cảnh báo thử nghiệm'}
+            </button>
+          </div>
+        </div>
+        
+        <div className="mb-6 p-4 bg-blue-50 rounded-md">
+          <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý cảnh báo</h2>
+          <p className="text-gray-600">
+            Nhận thông báo khi chi tiêu vượt ngân sách. Thiết lập các ngưỡng cảnh báo 
+            cho tổng chi tiêu hoặc chi tiêu theo danh mục.
+          </p>
+        </div>
+        
+        {/* Danh sách cảnh báo */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium text-gray-900">Cảnh báo hiện tại</h2>
+            <div className="flex space-x-2">
+              <button 
+                onClick={debugAlerts} 
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Debug
+              </button>
+              <button 
+                onClick={fetchAlerts} 
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Làm mới
               </button>
             </div>
           </div>
           
-          <div className="mb-6 p-4 bg-blue-50 rounded-md">
-            <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý cảnh báo</h2>
-            <p className="text-gray-600">
-              Nhận thông báo khi chi tiêu vượt ngân sách. Thiết lập các ngưỡng cảnh báo 
-              cho tổng chi tiêu hoặc chi tiêu theo danh mục.
-            </p>
-          </div>
-          
-          {/* Danh sách cảnh báo */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Cảnh báo hiện tại</h2>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={debugAlerts} 
-                  className="text-sm text-gray-600 hover:text-gray-800 underline"
-                >
-                  Debug
-                </button>
-                <button 
-                  onClick={fetchAlerts} 
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  Làm mới
-                </button>
-              </div>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
+          ) : alerts.length > 0 ? (
+            <div className="space-y-4">
+              {alerts.map(alert => renderAlert(alert))}
+            </div>
+          ) : (
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+              <p className="text-gray-600 text-center">Không có cảnh báo nào.</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Thiết lập cảnh báo */}
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Thiết lập cảnh báo</h2>
+          <p className="text-gray-600 italic mb-4">
+            Cảnh báo sẽ được tạo tự động khi:
+          </p>
+          <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+            <ul className="text-sm text-gray-600 space-y-3 list-disc list-inside">
+              <li>Chi tiêu tháng hiện tại vượt quá ngân sách hàng tháng đã thiết lập</li>
+              <li>Chi tiêu tháng hiện tại đạt trên 90% ngân sách hàng tháng (cảnh báo sớm)</li>
+              <li>Chi tiêu cho một danh mục cụ thể vượt quá ngân sách đã đặt cho danh mục đó</li>
+            </ul>
             
-            {loading ? (
-              <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              </div>
-            ) : alerts.length > 0 ? (
-              <div className="space-y-4">
-                {alerts.map(alert => renderAlert(alert))}
-              </div>
-            ) : (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-                <p className="text-gray-600 text-center">Không có cảnh báo nào.</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Thiết lập cảnh báo */}
-          <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Thiết lập cảnh báo</h2>
-            <p className="text-gray-600 italic mb-4">
-              Cảnh báo sẽ được tạo tự động khi:
-            </p>
-            <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
-              <ul className="text-sm text-gray-600 space-y-3 list-disc list-inside">
-                <li>Chi tiêu tháng hiện tại vượt quá ngân sách hàng tháng đã thiết lập</li>
-                <li>Chi tiêu tháng hiện tại đạt trên 90% ngân sách hàng tháng (cảnh báo sớm)</li>
-                <li>Chi tiêu cho một danh mục cụ thể vượt quá ngân sách đã đặt cho danh mục đó</li>
-              </ul>
-              
-              <div className="mt-5 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-700">
-                <p className="font-medium mb-2">Để cảnh báo hoạt động đúng, bạn cần:</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Thiết lập ngân sách hàng tháng trong mục <Link to="/budgets" className="text-blue-600 underline">Ngân sách</Link></li>
-                  <li>Thiết lập ngân sách cho từng danh mục chi tiêu</li>
-                  <li>Ghi nhận các giao dịch chi tiêu của bạn trong <Link to="/transactions" className="text-blue-600 underline">Giao dịch</Link></li>
-                </ol>
-              </div>
+            <div className="mt-5 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-700">
+              <p className="font-medium mb-2">Để cảnh báo hoạt động đúng, bạn cần:</p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Thiết lập ngân sách hàng tháng trong mục <Link to="/budgets" className="text-blue-600 underline">Ngân sách</Link></li>
+                <li>Thiết lập ngân sách cho từng danh mục chi tiêu</li>
+                <li>Ghi nhận các giao dịch chi tiêu của bạn trong <Link to="/transactions" className="text-blue-600 underline">Giao dịch</Link></li>
+              </ol>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

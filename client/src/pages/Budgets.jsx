@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
+import MainLayout from '../components/MainLayout';
 import { createBudget, getCurrentBudget, setCategoryBudget, getCategoryBudgets, updateCategoryBudget, getBudgetByMonth, getCategoryBudgetsByMonth, updateBudgetForMonth, deleteCategoryBudget } from '../services/budgets';
 import { getAllCategories } from '../services/categories';
 import { toast } from 'react-toastify';
@@ -597,264 +597,261 @@ const Budgets = () => {
   };
   
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Ngân sách</h1>
-          
-          <div className="mb-6 p-4 bg-blue-50 rounded-md">
-            <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý ngân sách</h2>
-            <p className="text-gray-600">
-              Tại đây bạn có thể thiết lập ngân sách hàng tháng và theo dõi tình hình chi tiêu.
-              Đặt hạn mức chi tiêu để quản lý tài chính hiệu quả hơn.
-            </p>
-          </div>
-          
-          {/* Bộ chọn tháng và năm */}
-          <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-            <h2 className="text-lg font-medium text-gray-900 mb-3">Chọn tháng xem ngân sách</h2>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="sm:w-1/4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                    <option key={month} value={month}>
-                      {`Tháng ${month}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sm:w-1/4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                >
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
-              {!isCurrentMonth && (
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    onClick={() => {
-                      setSelectedMonth(currentDate.getMonth() + 1);
-                      setSelectedYear(currentDate.getFullYear());
-                    }}
-                  >
-                    Về tháng hiện tại
-                  </button>
-                </div>
-              )}
+    <MainLayout>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Ngân sách</h1>
+        
+        <div className="mb-6 p-4 bg-blue-50 rounded-md">
+          <h2 className="text-lg font-medium text-blue-900 mb-2">Quản lý ngân sách</h2>
+          <p className="text-gray-600">
+            Tại đây bạn có thể thiết lập ngân sách hàng tháng và theo dõi tình hình chi tiêu.
+            Đặt hạn mức chi tiêu để quản lý tài chính hiệu quả hơn.
+          </p>
+        </div>
+        
+        {/* Bộ chọn tháng và năm */}
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <h2 className="text-lg font-medium text-gray-900 mb-3">Chọn tháng xem ngân sách</h2>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="sm:w-1/4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                  <option key={month} value={month}>
+                    {`Tháng ${month}`}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-          
-          {/* Ngân sách tổng */}
-          <div className="mb-6 border border-gray-200 rounded-lg p-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-3">
-              {isCurrentMonth ? 'Ngân sách tháng này' : `Ngân sách ${formatMonthDisplay(selectedMonth, selectedYear)}`}
-            </h2>
-            
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="sr-only">Đang tải...</span>
-                </div>
+            <div className="sm:w-1/4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              >
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            {!isCurrentMonth && (
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  onClick={() => {
+                    setSelectedMonth(currentDate.getMonth() + 1);
+                    setSelectedYear(currentDate.getFullYear());
+                  }}
+                >
+                  Về tháng hiện tại
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">
-                      {isCurrentMonth ? (
-                        `Chi tiêu: ${formatCurrency(monthlyBudget.spent)} / ${formatCurrency(monthlyBudget.amount)}`
-                      ) : (
-                        `Ngân sách: ${formatCurrency(monthlyBudget.amount)}`
-                      )}
-                    </span>
-                    {isCurrentMonth && (
-                      <span className="text-sm font-medium text-gray-700">
-                        {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%
-                      </span>
-                    )}
-                  </div>
-                  {isCurrentMonth && (
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-blue-600 h-2.5 rounded-full" 
-                        style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
-                      ></div>
-                    </div>
-                  )}
-                </div>
-                
-                <form onSubmit={handleMonthlyBudgetSubmit} className="mt-4">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex-grow">
-                      <input
-                        type="number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={`Nhập ngân sách cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
-                        value={newBudgetAmount}
-                        onChange={(e) => setNewBudgetAmount(e.target.value)}
-                        min="1"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      Cập nhật
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-          
-          {/* Ngân sách theo danh mục */}
-          <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              {isCurrentMonth 
-                ? 'Ngân sách theo danh mục tháng này' 
-                : `Ngân sách theo danh mục ${formatMonthDisplay(selectedMonth, selectedYear)}`}
-            </h2>
-            
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="sr-only">Đang tải...</span>
-                </div>
-              </div>
-            ) : (
-              <>
-                <form id="budget-form" onSubmit={handleCategoryBudgetSubmit} className="mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        required
-                      >
-                        <option value="">Chọn danh mục</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <input
-                        type="number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={`Nhập hạn mức cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
-                        value={categoryBudgetAmount}
-                        onChange={(e) => setCategoryBudgetAmount(e.target.value)}
-                        min="1"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <button
-                        type="submit"
-                        className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        Đặt hạn mức
-                      </button>
-                    </div>
-                  </div>
-                </form>
-                
-                <div className="space-y-4">
-                  {categoryBudgets.length > 0 ? (
-                    categoryBudgets.map(budget => {
-                      // Get the actual spending for this category
-                      const spent = getCategorySpent(budget.categoryId);
-                      // Get the budget limit (always positive)
-                      const limit = Math.abs(budget.budget_limit || 0);
-                      
-                      return (
-                        <div key={`budget-${budget.id || budget.categoryId}`} className="p-3 border border-gray-200 rounded">
-                          <h3 className="font-medium text-gray-800">{getCategoryName(budget.categoryId)}</h3>
-                          <div className="flex justify-between mb-1 mt-2">
-                            <span className="text-sm text-gray-700">
-                              {isCurrentMonth 
-                                ? `Chi tiêu: ${formatCurrency(spent)} / ${formatCurrency(limit)}`
-                                : `Hạn mức: ${formatCurrency(limit)}`
-                              }
-                            </span>
-                            {isCurrentMonth && (
-                              <span className="text-sm text-gray-700">
-                                {calculatePercentage(spent, limit)}%
-                              </span>
-                            )}
-                          </div>
-                          {isCurrentMonth && (
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  calculatePercentage(spent, limit) > 90 
-                                    ? 'bg-red-500' 
-                                    : calculatePercentage(spent, limit) > 70 
-                                      ? 'bg-yellow-500' 
-                                      : 'bg-green-500'
-                                }`} 
-                                style={{ width: `${calculatePercentage(spent, limit)}%` }}
-                              ></div>
-                            </div>
-                          )}
-                          <div className="mt-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(budget.categoryId);
-                                setCategoryBudgetAmount(Math.abs(budget.budget_limit || ''));
-                                window.scrollTo({
-                                  top: document.getElementById('budget-form')?.offsetTop - 100 || 0,
-                                  behavior: 'smooth'
-                                });
-                              }}
-                              className="text-sm text-blue-600 hover:text-blue-800 mr-4"
-                            >
-                              Cập nhật
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCategoryBudget(budget.id)}
-                              className="text-sm text-red-600 hover:text-red-800"
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-gray-600 italic">
-                      {isCurrentMonth 
-                        ? 'Chưa có hạn mức danh mục nào được thiết lập cho tháng này.'
-                        : `Chưa có hạn mức danh mục nào được thiết lập cho ${formatMonthDisplay(selectedMonth, selectedYear)}.`
-                      }
-                    </p>
-                  )}
-                </div>
-              </>
             )}
           </div>
         </div>
+        
+        {/* Ngân sách tổng */}
+        <div className="mb-6 border border-gray-200 rounded-lg p-4">
+          <h2 className="text-lg font-medium text-gray-900 mb-3">
+            {isCurrentMonth ? 'Ngân sách tháng này' : `Ngân sách ${formatMonthDisplay(selectedMonth, selectedYear)}`}
+          </h2>
+          
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Đang tải...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700">
+                    {isCurrentMonth ? (
+                      `Chi tiêu: ${formatCurrency(monthlyBudget.spent)} / ${formatCurrency(monthlyBudget.amount)}`
+                    ) : (
+                      `Ngân sách: ${formatCurrency(monthlyBudget.amount)}`
+                    )}
+                  </span>
+                  {isCurrentMonth && (
+                    <span className="text-sm font-medium text-gray-700">
+                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%
+                    </span>
+                  )}
+                </div>
+                {isCurrentMonth && (
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full" 
+                      style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
+                    ></div>
+                  </div>
+                )}
+              </div>
+              
+              <form onSubmit={handleMonthlyBudgetSubmit} className="mt-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-grow">
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={`Nhập ngân sách cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
+                      value={newBudgetAmount}
+                      onChange={(e) => setNewBudgetAmount(e.target.value)}
+                      min="1"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cập nhật
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+        </div>
+        
+        {/* Ngân sách theo danh mục */}
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            {isCurrentMonth 
+              ? 'Ngân sách theo danh mục tháng này' 
+              : `Ngân sách theo danh mục ${formatMonthDisplay(selectedMonth, selectedYear)}`}
+          </h2>
+          
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Đang tải...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <form id="budget-form" onSubmit={handleCategoryBudgetSubmit} className="mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      required
+                    >
+                      <option value="">Chọn danh mục</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={`Nhập hạn mức cho ${formatMonthDisplay(selectedMonth, selectedYear)} (VNĐ)`}
+                      value={categoryBudgetAmount}
+                      onChange={(e) => setCategoryBudgetAmount(e.target.value)}
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <button
+                      type="submit"
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      Đặt hạn mức
+                    </button>
+                  </div>
+                </div>
+              </form>
+              
+              <div className="space-y-4">
+                {categoryBudgets.length > 0 ? (
+                  categoryBudgets.map(budget => {
+                    // Get the actual spending for this category
+                    const spent = getCategorySpent(budget.categoryId);
+                    // Get the budget limit (always positive)
+                    const limit = Math.abs(budget.budget_limit || 0);
+                    
+                    return (
+                      <div key={`budget-${budget.id || budget.categoryId}`} className="p-3 border border-gray-200 rounded">
+                        <h3 className="font-medium text-gray-800">{getCategoryName(budget.categoryId)}</h3>
+                        <div className="flex justify-between mb-1 mt-2">
+                          <span className="text-sm text-gray-700">
+                            {isCurrentMonth 
+                              ? `Chi tiêu: ${formatCurrency(spent)} / ${formatCurrency(limit)}`
+                              : `Hạn mức: ${formatCurrency(limit)}`
+                            }
+                          </span>
+                          {isCurrentMonth && (
+                            <span className="text-sm text-gray-700">
+                              {calculatePercentage(spent, limit)}%
+                            </span>
+                          )}
+                        </div>
+                        {isCurrentMonth && (
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                calculatePercentage(spent, limit) > 90 
+                                  ? 'bg-red-500' 
+                                  : calculatePercentage(spent, limit) > 70 
+                                    ? 'bg-yellow-500' 
+                                    : 'bg-green-500'
+                              }`} 
+                              style={{ width: `${calculatePercentage(spent, limit)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                        <div className="mt-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(budget.categoryId);
+                              setCategoryBudgetAmount(Math.abs(budget.budget_limit || ''));
+                              window.scrollTo({
+                                top: document.getElementById('budget-form')?.offsetTop - 100 || 0,
+                                behavior: 'smooth'
+                              });
+                            }}
+                            className="text-sm text-blue-600 hover:text-blue-800 mr-4"
+                          >
+                            Cập nhật
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategoryBudget(budget.id)}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-600 italic">
+                    {isCurrentMonth 
+                      ? 'Chưa có hạn mức danh mục nào được thiết lập cho tháng này.'
+                      : `Chưa có hạn mức danh mục nào được thiết lập cho ${formatMonthDisplay(selectedMonth, selectedYear)}.`
+                    }
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
