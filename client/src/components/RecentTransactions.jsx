@@ -13,15 +13,15 @@ const RecentTransactions = () => {
     const fetchRecentTransactions = async () => {
       try {
         setLoading(true);
-        // Lấy 3 giao dịch gần nhất
-        const data = await getCurrentUserTransactions({ limit: 3 });
+        // Lấy tất cả giao dịch
+        const data = await getCurrentUserTransactions();
         
-        // Sort by createdAt date, newest first
+        // Sort by date, newest first, then take only 3
         const sortedData = Array.isArray(data) ? [...data].sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.date);
-          const dateB = new Date(b.createdAt || b.date);
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
           return dateB - dateA;
-        }) : [];
+        }).slice(0, 3) : [];
         
         setTransactions(sortedData);
         setError(null);
@@ -94,16 +94,16 @@ const RecentTransactions = () => {
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-3">Đang tải dữ liệu...</span>
+      <div className="flex justify-center items-center py-2">
+        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+        <span className="ml-3 text-sm">Đang tải...</span>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
         <p>{error}</p>
       </div>
     );
@@ -111,9 +111,9 @@ const RecentTransactions = () => {
   
   if (transactions.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-4 rounded text-center">
+      <div className="bg-gray-50 border border-gray-200 text-gray-700 px-3 py-3 rounded text-center text-sm">
         <p>Bạn chưa có giao dịch nào.</p>
-        <Link to="/transactions" className="text-blue-600 hover:text-blue-800 underline mt-2 inline-block">
+        <Link to="/transactions" className="text-blue-600 hover:text-blue-800 underline mt-1 inline-block text-sm">
           Thêm giao dịch mới
         </Link>
       </div>
@@ -121,41 +121,32 @@ const RecentTransactions = () => {
   }
   
   return (
-    <div className="overflow-x-auto">
+    <div className="transaction-list">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Ngày
             </th>
-            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Danh mục
             </th>
-            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Loại
-            </th>
-            <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Số tiền
             </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {transactions.map((transaction) => (
-            <tr key={transaction.transactionId}>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+            <tr key={transaction.transactionId || transaction.id} className="transaction-row">
+              <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
                 {formatDate(transaction.date)}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+              <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 flex items-center">
+                <span className={`w-2 h-2 rounded-full mr-2 ${transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 {transaction.category?.name || 'N/A'}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {transaction.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
-                </span>
-              </td>
-              <td className={`px-4 py-2 whitespace-nowrap text-sm font-medium text-right ${
+              <td className={`px-3 py-2 whitespace-nowrap text-xs font-medium text-right ${
                 transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
               }`}>
                 {formatAmount(transaction.amount)}
@@ -164,8 +155,8 @@ const RecentTransactions = () => {
           ))}
         </tbody>
       </table>
-      <div className="mt-4 text-right">
-        <Link to="/transactions" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+      <div className="mt-3 text-right">
+        <Link to="/transactions" className="text-blue-600 hover:text-blue-800 text-xs font-medium">
           Xem tất cả giao dịch →
         </Link>
       </div>

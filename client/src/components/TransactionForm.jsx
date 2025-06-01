@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { getAllCategories } from '../services/categories';
 import { createTransaction, updateTransaction } from '../services/transactions';
 import { toast } from 'react-toastify';
+import styled from 'styled-components';
 
 const TransactionForm = ({ transaction, onTransactionChange }) => {
   const [formData, setFormData] = useState({
@@ -129,48 +130,48 @@ const TransactionForm = ({ transaction, onTransactionChange }) => {
   const filteredCategories = categories;
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow">
+    <StyledForm onSubmit={handleSubmit}>
       {errors.form && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="error-message">
           {errors.form}
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Loại giao dịch */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="form-grid">
+        {/* Transaction Type */}
+        <div className="form-group">
+          <label className="form-label">
             Loại giao dịch
           </label>
-          <div className="flex space-x-4">
-            <label className="inline-flex items-center">
+          <div className="radio-group">
+            <label className="radio-label">
               <input
                 type="radio"
                 name="type"
                 value="expense"
                 checked={formData.type === 'expense'}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600"
+                className="radio-input"
               />
-              <span className="ml-2 text-gray-700">Chi tiêu</span>
+              <span>Chi tiêu</span>
             </label>
-            <label className="inline-flex items-center">
+            <label className="radio-label">
               <input
                 type="radio"
                 name="type"
                 value="income"
                 checked={formData.type === 'income'}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600"
+                className="radio-input"
               />
-              <span className="ml-2 text-gray-700">Thu nhập</span>
+              <span>Thu nhập</span>
             </label>
           </div>
         </div>
         
-        {/* Danh mục */}
-        <div>
-          <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Category */}
+        <div className="form-group">
+          <label htmlFor="categoryId" className="form-label">
             Danh mục
           </label>
           <select
@@ -178,7 +179,7 @@ const TransactionForm = ({ transaction, onTransactionChange }) => {
             name="categoryId"
             value={formData.categoryId}
             onChange={handleChange}
-            className={`mt-1 block w-full py-2 px-3 border ${errors.categoryId ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+            className={`form-select ${errors.categoryId ? 'error' : ''}`}
           >
             <option value="">-- Chọn danh mục --</option>
             {filteredCategories && filteredCategories.length > 0 ? (
@@ -192,56 +193,55 @@ const TransactionForm = ({ transaction, onTransactionChange }) => {
             )}
           </select>
           {errors.categoryId && (
-            <p className="mt-1 text-sm text-red-600">{errors.categoryId}</p>
+            <p className="error-text">{errors.categoryId}</p>
           )}
         </div>
         
-        {/* Số tiền */}
-        <div>
-          <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Amount */}
+        <div className="form-group">
+          <label htmlFor="amount" className="form-label">
             Số tiền
           </label>
-          <div className="relative rounded-md shadow-sm">
+          <div className="input-with-icon">
             <input
               type="number"
               id="amount"
               name="amount"
               value={formData.amount}
               onChange={handleChange}
-              className={`mt-1 block w-full py-2 px-3 border ${errors.amount ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+              className={`form-input ${errors.amount ? 'error' : ''}`}
               placeholder="0"
               min="0"
-              step="0.01"
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">₫</span>
-            </div>
+            <span className="currency-symbol">₫</span>
           </div>
           {errors.amount && (
-            <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+            <p className="error-text">{errors.amount}</p>
           )}
         </div>
         
-        {/* Ngày */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Date */}
+        <div className="form-group">
+          <label htmlFor="date" className="form-label">
             Ngày
           </label>
-          <DatePicker
-            selected={formData.date}
-            onChange={handleDateChange}
-            dateFormat="dd/MM/yyyy"
-            className={`mt-1 block w-full py-2 px-3 border ${errors.date ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-          />
+          <div className="datepicker-wrapper">
+            <DatePicker
+              selected={formData.date}
+              onChange={handleDateChange}
+              dateFormat="dd/MM/yyyy"
+              className={`form-datepicker ${errors.date ? 'error' : ''}`}
+            />
+          </div>
           {errors.date && (
-            <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+            <p className="error-text">{errors.date}</p>
           )}
         </div>
       </div>
       
-      {/* Ghi chú */}
-      <div>
-        <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+      {/* Note */}
+      <div className="form-group">
+        <label htmlFor="note" className="form-label">
           Ghi chú (tùy chọn)
         </label>
         <textarea
@@ -249,34 +249,203 @@ const TransactionForm = ({ transaction, onTransactionChange }) => {
           name="note"
           value={formData.note}
           onChange={handleChange}
-          rows="3"
-          className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Nhập ghi chú về giao dịch này..."
-        ></textarea>
+          className="form-textarea"
+          rows="2"
+          placeholder="Nhập ghi chú..."
+        />
       </div>
       
-      {/* Nút submit */}
-      <div className="flex justify-end">
+      <div className="button-container">
         <button
           type="submit"
+          className="submit-button"
           disabled={loading}
-          className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Đang xử lý...
-            </>
+            <div className="spinner-container">
+              <div className="button-spinner"></div>
+              <span>Đang xử lý...</span>
+            </div>
           ) : (
-            transaction ? 'Cập nhật giao dịch' : 'Thêm giao dịch'
+            'Thêm giao dịch'
           )}
         </button>
       </div>
-    </form>
+    </StyledForm>
   );
 };
+
+const StyledForm = styled.form`
+  --input-focus: #5A67D8;
+  --font-color: #2D3748;
+  --font-color-sub: #4A5568;
+  --main-color: #2D3748;
+  --green-color: #48BB78;
+  --red-color: #F56565;
+  
+  width: 100%;
+  max-width: 100%;
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  
+  .form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--font-color);
+    margin-bottom: 0;
+  }
+  
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .form-datepicker {
+    padding: 6px 10px;
+    border: 2px solid var(--main-color);
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 2px 2px var(--main-color);
+    font-size: 14px;
+    color: var(--font-color);
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+    transition: all 0.2s;
+    
+    &:focus {
+      box-shadow: 3px 3px var(--input-focus);
+      border-color: var(--input-focus);
+    }
+    
+    &.error {
+      border-color: var(--red-color);
+      box-shadow: 2px 2px var(--red-color);
+    }
+  }
+  
+  .radio-group {
+    display: flex;
+    gap: 16px;
+  }
+  
+  .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    
+    span {
+      margin-left: 6px;
+      font-weight: 500;
+    }
+  }
+  
+  .input-with-icon {
+    position: relative;
+    width: 100%;
+    
+    .form-input {
+      padding-right: 24px;
+    }
+    
+    .currency-symbol {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--font-color-sub);
+    }
+  }
+  
+  .datepicker-wrapper {
+    width: 100%;
+    .react-datepicker-wrapper {
+      width: 100%;
+      display: block;
+      
+      .react-datepicker__input-container {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+  
+  .error-message {
+    background-color: #FFF5F5;
+    border: 1px solid #FED7D7;
+    color: var(--red-color);
+    padding: 8px 10px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  
+  .error-text {
+    color: var(--red-color);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+  
+  .submit-button {
+    padding: 7px 14px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--input-focus);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 130px;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .spinner-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .button-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
 
 export default TransactionForm; 

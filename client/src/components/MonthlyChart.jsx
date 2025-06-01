@@ -23,7 +23,7 @@ ChartJS.register(
   Legend
 );
 
-const MonthlyChart = ({ year = null }) => {
+const MonthlyChart = ({ year = null, selectedMonth = null }) => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,20 +66,31 @@ const MonthlyChart = ({ year = null }) => {
           });
         }
         
+        // Tạo màu nền cho các cột, làm nổi bật tháng được chọn
+        const incomeBackgroundColors = Array(12).fill('rgba(75, 192, 192, 0.7)');
+        const expenseBackgroundColors = Array(12).fill('rgba(255, 99, 132, 0.7)');
+        
+        // Nếu có tháng được chọn, làm nổi bật tháng đó
+        if (selectedMonth && selectedMonth >= 1 && selectedMonth <= 12) {
+          const monthIndex = selectedMonth - 1; // Chuyển từ 1-12 sang 0-11
+          incomeBackgroundColors[monthIndex] = 'rgba(75, 192, 192, 1)'; // Đậm hơn
+          expenseBackgroundColors[monthIndex] = 'rgba(255, 99, 132, 1)'; // Đậm hơn
+        }
+        
         setChartData({
           labels: months,
           datasets: [
             {
               label: 'Thu nhập',
               data: incomeData,
-              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              backgroundColor: incomeBackgroundColors,
               borderColor: 'rgb(75, 192, 192)',
               borderWidth: 1
             },
             {
               label: 'Chi tiêu',
               data: expenseData,
-              backgroundColor: 'rgba(255, 99, 132, 0.6)',
+              backgroundColor: expenseBackgroundColors,
               borderColor: 'rgb(255, 99, 132)',
               borderWidth: 1
             }
@@ -97,7 +108,7 @@ const MonthlyChart = ({ year = null }) => {
     };
     
     fetchChartData();
-  }, [year]);
+  }, [year, selectedMonth]);
   
   const chartOptions = {
     responsive: true,
@@ -105,16 +116,48 @@ const MonthlyChart = ({ year = null }) => {
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#2D3748' // Màu chữ đậm hơn
+        }
       },
       title: {
         display: true,
         text: `Thu nhập và chi tiêu năm ${year || new Date().getFullYear()}`,
+        font: {
+          size: 16,
+          weight: 'bold'
+        },
+        color: '#2D3748' // Màu chữ đậm hơn
       },
+      tooltip: {
+        titleFont: {
+          size: 14,
+          weight: 'bold'
+        },
+        bodyFont: {
+          size: 14
+        },
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#FFFFFF',
+        bodyColor: '#FFFFFF',
+        padding: 10,
+        cornerRadius: 4,
+        displayColors: true
+      }
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
+          font: {
+            size: 12,
+            weight: 'bold'
+          },
+          color: '#2D3748', // Màu chữ đậm hơn
           callback: function(value) {
             return new Intl.NumberFormat('vi-VN', {
               style: 'currency',
@@ -122,6 +165,22 @@ const MonthlyChart = ({ year = null }) => {
               maximumFractionDigits: 0
             }).format(value);
           }
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          lineWidth: 1
+        }
+      },
+      x: {
+        ticks: {
+          font: {
+            size: 12,
+            weight: 'bold'
+          },
+          color: '#2D3748' // Màu chữ đậm hơn
+        },
+        grid: {
+          display: false
         }
       }
     }
@@ -148,7 +207,7 @@ const MonthlyChart = ({ year = null }) => {
   }
 
   return (
-    <div className="h-80">
+    <div className="h-full">
       {chartData && <Bar data={chartData} options={chartOptions} />}
     </div>
   );

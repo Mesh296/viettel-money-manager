@@ -17,7 +17,10 @@ const Transactions = () => {
   };
   
   const filterTransactions = (tab) => {
+    // Update active tab
     setActiveTab(tab);
+    // Trigger refresh of the transaction list with the new filter
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -57,13 +60,11 @@ const Transactions = () => {
               </div>
             </div>
             
-            <div className="transaction-card">
-              <TransactionList 
-                refreshTrigger={refreshTrigger} 
-                filter={activeTab} 
-                onTransactionChange={handleTransactionChange} 
-              />
-            </div>
+            <TransactionList 
+              refreshTrigger={refreshTrigger} 
+              filter={activeTab} 
+              onTransactionChange={handleTransactionChange} 
+            />
           </div>
         </div>
       </StyledTransactions>
@@ -110,16 +111,15 @@ const StyledTransactions = styled.div`
     padding: 20px;
     margin-bottom: 20px;
     transition: transform 0.2s;
-    
-    &:hover {
-      transform: translateY(-2px);
-    }
+    width: 100%;
+    box-sizing: border-box;
     
     h2 {
       font-size: 18px;
       font-weight: 700;
       color: var(--main-color);
       margin-bottom: 16px;
+      margin-top: 0;
     }
   }
   
@@ -128,6 +128,8 @@ const StyledTransactions = styled.div`
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
     
     h2 {
       font-size: 20px;
@@ -135,15 +137,25 @@ const StyledTransactions = styled.div`
       color: var(--main-color);
       margin: 0;
     }
+    
+    @media (max-width: 600px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
   
   .filter-buttons {
     display: flex;
     gap: 8px;
+    
+    @media (max-width: 600px) {
+      width: 100%;
+      justify-content: space-between;
+    }
   }
   
   .filter-btn {
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 5px;
     border: 2px solid var(--main-color);
     background-color: var(--bg-color);
@@ -153,7 +165,7 @@ const StyledTransactions = styled.div`
     transition: all 0.2s;
     
     &:hover {
-      background-color: #f3f4f6;
+      transform: translateY(-1px);
     }
     
     &.active {
@@ -170,28 +182,20 @@ const StyledTransactions = styled.div`
       background-color: var(--red-color);
       color: white;
     }
+    
+    @media (max-width: 600px) {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 14px;
+      text-align: center;
+    }
   }
   
   @media (max-width: 768px) {
-    padding: 10px;
+    padding: 12px;
     
-    .header-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-      
-      h2 {
-        margin-bottom: 0;
-      }
-    }
-    
-    .filter-buttons {
-      width: 100%;
-      
-      .filter-btn {
-        flex: 1;
-        text-align: center;
-      }
+    .transaction-card {
+      padding: 16px;
     }
   }
 `;

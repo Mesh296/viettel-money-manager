@@ -3,8 +3,9 @@ import { getCurrentUserTransactions, deleteTransaction, searchTransactions } fro
 import { toast } from 'react-toastify';
 import TransactionFilter from './TransactionFilter';
 import TransactionEdit from './TransactionEdit';
+import styled from 'styled-components';
 
-const TransactionList = ({ refreshTrigger }) => {
+const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,6 +39,11 @@ const TransactionList = ({ refreshTrigger }) => {
           transactionsData = [];
         }
         
+        // Apply type filter based on the filter prop
+        if (filter !== 'all') {
+          transactionsData = transactionsData.filter(t => t.type === filter);
+        }
+        
         // Sort transactions by date added (newest first)
         transactionsData.sort((a, b) => {
           const dateA = new Date(a.createdAt || a.date);
@@ -45,7 +51,7 @@ const TransactionList = ({ refreshTrigger }) => {
           return dateB - dateA; // Newest first
         });
         
-        console.log('Transactions loaded:', response);
+        console.log('Transactions loaded:', transactionsData);
         setTransactions(transactionsData);
         setError(null);
       } catch (error) {
@@ -58,7 +64,7 @@ const TransactionList = ({ refreshTrigger }) => {
     };
     
     fetchTransactions();
-  }, [refreshTrigger, currentFilters, isFiltering]);
+  }, [refreshTrigger, currentFilters, isFiltering, filter]);
   
   // Xử lý khi thay đổi bộ lọc
   const handleFilterChange = (filterParams) => {
@@ -86,29 +92,42 @@ const TransactionList = ({ refreshTrigger }) => {
   
   // Mở modal chỉnh sửa giao dịch
   const handleEdit = (id) => {
-    console.log('Opening edit modal for transaction ID:', id);
-    // Đảm bảo ID không bị null
-    if (id) {
-      setEditingTransactionId(id);
-      // Debug cho người dùng
-      toast.info(`Đang mở modal chỉnh sửa cho giao dịch: ${id.substring(0, 8)}...`);
-      console.log('EditingTransactionId has been set to:', id);
-    } else {
-      console.error('Cannot open edit modal: Transaction ID is null or undefined');
-      toast.error('Không thể mở modal chỉnh sửa: ID giao dịch không hợp lệ');
+    // Make sure we have a valid ID
+    if (!id) {
+      console.error("Invalid transaction ID:", id);
+      toast.error('ID giao dịch không hợp lệ');
+      return;
+    }
+    
+    // Set the transaction ID to open the modal
+    console.log('Setting transaction ID for editing:', id);
+    
+    try {
+      // Reset any previous ID before setting the new one
+      setEditingTransactionId(null);
+      
+      // Wait for state update to complete using setTimeout
+      setTimeout(() => {
+        setEditingTransactionId(id);
+        console.log('Edited transaction ID state set to:', id);
+      }, 50);
+    } catch (error) {
+      console.error("Error setting transaction ID:", error);
+      toast.error("Có lỗi xảy ra khi mở modal chỉnh sửa");
     }
   };
   
   // Xử lý khi giao dịch đã được cập nhật
   const handleTransactionUpdated = () => {
-    // Tải lại danh sách giao dịch
-    if (isFiltering) {
-      // Nếu đang lọc, áp dụng lại bộ lọc hiện tại
-      handleFilterChange(currentFilters);
+    // Increment the refresh trigger to reload the transaction list
+    console.log("Transaction updated, refreshing list with filter:", filter);
+    
+    // If onTransactionChange prop exists, call it to notify parent component
+    if (typeof onTransactionChange === 'function') {
+      onTransactionChange();
     } else {
-      // Nếu không, tải lại tất cả
-      setCurrentFilters({});
-      setIsFiltering(false);
+      // Otherwise just refresh this component
+      setRefreshTrigger(prev => prev + 1);
     }
   };
   
@@ -176,13 +195,13 @@ const TransactionList = ({ refreshTrigger }) => {
   const renderFilterNotification = () => {
     if (isFiltering) {
       return (
-        <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md flex justify-between items-center">
-          <span className="text-sm text-blue-700">
-            <span className="font-medium">Đang lọc:</span> {Object.keys(currentFilters).length} điều kiện được áp dụng
+        <div className="filter-notification">
+          <span>
+            <strong>Đang lọc:</strong> {Object.keys(currentFilters).length} điều kiện được áp dụng
           </span>
           <button
             onClick={() => handleFilterChange({})}
-            className="text-sm text-blue-700 hover:text-blue-900 underline"
+            className="clear-filter-button"
           >
             Xóa bộ lọc
           </button>
@@ -194,142 +213,335 @@ const TransactionList = ({ refreshTrigger }) => {
   
   if (loading) {
     return (
-      <div>
+      <StyledTransactionList>
         {renderFilter()}
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          <span className="ml-3">Đang tải dữ liệu...</span>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <span>Đang tải dữ liệu...</span>
         </div>
-      </div>
+      </StyledTransactionList>
     );
   }
   
   if (error) {
     return (
-      <div>
+      <StyledTransactionList>
         {renderFilter()}
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="error-message">
           <p>{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="mt-2 text-red-700 underline"
+            className="retry-button"
           >
             Thử lại
           </button>
         </div>
-      </div>
+      </StyledTransactionList>
     );
   }
   
   if (transactions.length === 0) {
     return (
-      <div>
+      <StyledTransactionList>
         {renderFilter()}
         {renderFilterNotification()}
-        <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-8 rounded text-center">
+        <div className="empty-message">
           <p>
             {isFiltering 
               ? 'Không tìm thấy giao dịch nào khớp với điều kiện lọc.' 
               : 'Bạn chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!'}
           </p>
         </div>
-      </div>
+      </StyledTransactionList>
     );
   }
   
   return (
-    <div>
+    <StyledTransactionList>
       {renderFilter()}
       {renderFilterNotification()}
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="table-container">
+        <table className="transaction-table">
+          <thead>
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ngày
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Danh mục
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Loại
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Số tiền
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ghi chú
-              </th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Thao tác
-              </th>
+              <th>Ngày</th>
+              <th>Danh mục</th>
+              <th>Loại</th>
+              <th>Số tiền</th>
+              <th>Ghi chú</th>
+              <th className="actions-column">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => (
-              <tr key={transaction.id || transaction.transactionId}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(transaction.date)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {transaction.category?.name || 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {transaction.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
-                  </span>
-                </td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatAmount(transaction.amount)}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                  {transaction.note || ''}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button 
-                    onClick={() => handleEdit(transaction.transactionId)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    Sửa
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(transaction.id || transaction.transactionId)}
-                    className="text-red-600 hover:text-red-900 ml-2"
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-            ))}
+          <tbody>
+            {transactions.map((transaction) => {
+              // Ensure we have a consistent ID value
+              const transactionId = transaction.id || transaction.transactionId;
+              
+              return (
+                <tr key={transactionId}>
+                  <td>{formatDate(transaction.date)}</td>
+                  <td>{transaction.category?.name || 'N/A'}</td>
+                  <td>
+                    <span className={`transaction-type ${transaction.type}`}>
+                      {transaction.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
+                    </span>
+                  </td>
+                  <td className={`amount ${transaction.type}`}>
+                    {formatAmount(transaction.amount)}
+                  </td>
+                  <td className="note-cell">
+                    {transaction.note || ''}
+                  </td>
+                  <td className="actions-cell">
+                    <button 
+                      onClick={() => handleEdit(transactionId)}
+                      className="edit-button"
+                      aria-label="Sửa giao dịch"
+                    >
+                      Sửa
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(transactionId)}
+                      className="delete-button"
+                      aria-label="Xóa giao dịch"
+                    >
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       
       {/* Modal chỉnh sửa giao dịch */}
       {editingTransactionId && (
-        <>
-          {/* Thông báo debug hiển thị cho người dùng */}
-          <div className="fixed top-0 left-0 right-0 bg-yellow-200 p-4 mb-4 text-center z-[2000]">
-            Modal đang mở với ID: {editingTransactionId}
-          </div>
-          <TransactionEdit
-            key={`edit-transaction-${editingTransactionId}`}
-            transactionId={editingTransactionId}
-            onClose={() => {
-              console.log('Closing modal...');
-              setEditingTransactionId(null);
-            }}
-            onTransactionUpdated={handleTransactionUpdated}
-          />
-        </>
+        <TransactionEdit
+          key={`edit-transaction-${editingTransactionId}`}
+          transactionId={editingTransactionId}
+          onClose={() => {
+            console.log("Closing edit modal");
+            setEditingTransactionId(null);
+          }}
+          onTransactionUpdated={() => {
+            console.log("Transaction updated, refreshing list");
+            handleTransactionUpdated();
+          }}
+        />
       )}
-    </div>
+    </StyledTransactionList>
   );
 };
+
+const StyledTransactionList = styled.div`
+  --input-focus: #5A67D8;
+  --font-color: #2D3748;
+  --font-color-sub: #4A5568;
+  --bg-color: #FFF;
+  --main-color: #2D3748;
+  --green-color: #48BB78;
+  --red-color: #F56565;
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    gap: 16px;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(90, 103, 216, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--input-focus);
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  .error-message {
+    background-color: #FFF5F5;
+    border: 1px solid #FED7D7;
+    color: var(--red-color);
+    padding: 16px;
+    border-radius: 5px;
+    margin-bottom: 16px;
+    text-align: center;
+    
+    .retry-button {
+      margin-top: 12px;
+      color: var(--red-color);
+      text-decoration: underline;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      
+      &:hover {
+        color: #C53030;
+      }
+    }
+  }
+  
+  .filter-notification {
+    background-color: #EBF8FF;
+    border: 1px solid #BEE3F8;
+    color: #3182CE;
+    padding: 12px 16px;
+    border-radius: 5px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .clear-filter-button {
+      color: #3182CE;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      
+      &:hover {
+        color: #2C5282;
+      }
+    }
+  }
+  
+  .empty-message {
+    background-color: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    color: var(--font-color-sub);
+    padding: 24px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: 500;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    border-radius: 5px;
+    border: 1px solid #E2E8F0;
+  }
+  
+  .transaction-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #F8FAFC;
+      font-weight: 600;
+      color: var(--font-color);
+      border-bottom: 1px solid #E2E8F0;
+      white-space: nowrap;
+      
+      &:first-child {
+        border-top-left-radius: 5px;
+      }
+      
+      &:last-child {
+        border-top-right-radius: 5px;
+      }
+      
+      &.actions-column {
+        text-align: right;
+      }
+    }
+    
+    td {
+      border-bottom: 1px solid #E2E8F0;
+      color: var(--font-color);
+      
+      &.note-cell {
+        max-width: 200px;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--font-color-sub);
+      }
+      
+      &.actions-cell {
+        text-align: right;
+        white-space: nowrap;
+      }
+      
+      &.amount {
+        font-weight: 600;
+        
+        &.income {
+          color: var(--green-color);
+        }
+        
+        &.expense {
+          color: var(--red-color);
+        }
+      }
+    }
+    
+    tr:hover {
+      background-color: rgba(237, 242, 247, 0.5);
+    }
+    
+    .transaction-type {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      
+      &.income {
+        background-color: rgba(72, 187, 120, 0.1);
+        color: var(--green-color);
+        border: 1px solid rgba(72, 187, 120, 0.3);
+      }
+      
+      &.expense {
+        background-color: rgba(245, 101, 101, 0.1);
+        color: var(--red-color);
+        border: 1px solid rgba(245, 101, 101, 0.3);
+      }
+    }
+    
+    .edit-button,
+    .delete-button {
+      background: none;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+    
+    .edit-button {
+      color: var(--input-focus);
+      margin-right: 12px;
+    }
+    
+    .delete-button {
+      color: var(--red-color);
+    }
+  }
+  
+  // Higher z-index to ensure modal appears above everything
+  position: relative;
+  z-index: 1;
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
 
 export default TransactionList; 

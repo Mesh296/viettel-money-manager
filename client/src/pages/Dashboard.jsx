@@ -15,18 +15,28 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Thêm state cho việc chọn tháng
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
+  // Hàm xử lý thay đổi tháng
+  const handleMonthChange = (e) => {
+    setSelectedMonth(parseInt(e.target.value));
+  };
+  
+  // Hàm xử lý thay đổi năm
+  const handleYearChange = (e) => {
+    setSelectedYear(parseInt(e.target.value));
+  };
+  
   // Thêm hàm để làm mới dữ liệu khi có thay đổi
   const refreshData = useCallback(async () => {
     if (!user) return;
     
     try {
       setLoading(true);
-      // Lấy tháng hiện tại
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1;
-      const currentYear = currentDate.getFullYear();
       
-      const data = await getSummaryStatistics(currentMonth, currentYear);
+      const data = await getSummaryStatistics(selectedMonth, selectedYear);
       setStatistics(data);
       setError(null);
     } catch (error) {
@@ -35,9 +45,9 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, selectedMonth, selectedYear]);
   
-  // Tải thống kê khi component mount
+  // Tải thống kê khi component mount hoặc khi tháng/năm thay đổi
   useEffect(() => {
     refreshData();
   }, [refreshData]);
@@ -47,124 +57,166 @@ const Dashboard = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
   
+  // Tạo danh sách các tháng để hiển thị trong dropdown
+  const months = [
+    { value: 1, label: 'Tháng 1' },
+    { value: 2, label: 'Tháng 2' },
+    { value: 3, label: 'Tháng 3' },
+    { value: 4, label: 'Tháng 4' },
+    { value: 5, label: 'Tháng 5' },
+    { value: 6, label: 'Tháng 6' },
+    { value: 7, label: 'Tháng 7' },
+    { value: 8, label: 'Tháng 8' },
+    { value: 9, label: 'Tháng 9' },
+    { value: 10, label: 'Tháng 10' },
+    { value: 11, label: 'Tháng 11' },
+    { value: 12, label: 'Tháng 12' }
+  ];
+  
+  // Tạo danh sách các năm để hiển thị trong dropdown (5 năm gần đây)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  
   // Nếu user chưa load, hiển thị trạng thái loading
-  if (userLoading || !user) {
+  if (userLoading) {
     return (
       <MainLayout>
-        <StyledDashboard>
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Đang tải thông tin người dùng...</p>
-          </div>
-        </StyledDashboard>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <span>Đang tải...</span>
+        </div>
       </MainLayout>
     );
   }
-  
+
   return (
     <MainLayout>
       <StyledDashboard>
         <div className="dashboard-container">
-          <h1 className="dashboard-title">Dashboard</h1>
+          <h1 className="page-title">Dashboard</h1>
           
-          <div className="dashboard-card user-info">
-            <h2>Thông tin người dùng</h2>
-            <div className="user-info-grid">
+          {/* Bộ chọn tháng và năm */}
+          <div className="date-selector-container">
+            <div className="date-selector">
               <div>
-                <p className="label">Họ tên:</p>
-                <p className="value">{user?.name || 'N/A'}</p>
+                <label htmlFor="month-select">Tháng:</label>
+                <select 
+                  id="month-select"
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
+                >
+                  {months.map(month => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+              
               <div>
-                <p className="label">Email:</p>
-                <p className="value">{user?.email || 'N/A'}</p>
+                <label htmlFor="year-select">Năm:</label>
+                <select 
+                  id="year-select"
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
-          
-          {/* Cảnh báo */}
-          <div className="alert-container">
-            <AlertWidget />
-          </div>
-          
-          {/* Thống kê tổng quan */}
-          <div className="section">
-            <h2>Thống kê tháng {statistics?.monthName || ''}</h2>
+
+          {/* Layout chia thành 2 cột cho desktop và 1 cột cho mobile */}
+          <div className="dashboard-grid">
+            {/* Cột bên trái */}
+            <div className="dashboard-column main-column">
+              <div className="section">
+                <h2>Thống kê tháng {statistics?.monthName || ''}</h2>
+                
+                {loading ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Đang tải thống kê...</p>
+                  </div>
+                ) : error ? (
+                  <div className="error-message">
+                    <p>{error}</p>
+                    <button onClick={() => window.location.reload()}>
+                      Thử lại
+                    </button>
+                  </div>
+                ) : (
+                  <div className="stats-grid">
+                    {/* Thu nhập */}
+                    <div className="dashboard-card income">
+                      <h3>Tổng thu nhập</h3>
+                      <p className="amount income-amount">
+                        {formatAmount(statistics?.totalIncome || 0)}
+                      </p>
+                    </div>
+                    
+                    {/* Chi tiêu */}
+                    <div className="dashboard-card expense">
+                      <h3>Tổng chi tiêu</h3>
+                      <p className="amount expense-amount">
+                        {formatAmount(statistics?.totalExpense || 0)}
+                      </p>
+                    </div>
+                    
+                    {/* Số dư */}
+                    <div className="dashboard-card balance">
+                      <h3>Số dư</h3>
+                      <p className={`amount ${statistics?.balance >= 0 ? 'balance-positive' : 'balance-negative'}`}>
+                        {formatAmount(statistics?.balance || 0)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Biểu đồ thu chi theo tháng */}
+              <div className="section">
+                <h2>Biểu đồ thu chi theo tháng</h2>
+                <div className="dashboard-card chart-card">
+                  <MonthlyChart year={selectedYear} selectedMonth={selectedMonth} />
+                </div>
+              </div>
+              
+              {/* Biểu đồ chi tiêu theo danh mục */}
+              <div className="section">
+                <h2>Chi tiêu theo danh mục</h2>
+                <div className="dashboard-card chart-card">
+                  <CategorySpendingChart 
+                    month={selectedMonth} 
+                    year={selectedYear} 
+                  />
+                </div>
+              </div>
+            </div>
             
-            {loading ? (
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <span>Đang tải thống kê...</span>
-              </div>
-            ) : error ? (
-              <div className="error-message">
-                <p>{error}</p>
-                <button onClick={() => window.location.reload()}>
-                  Thử lại
-                </button>
-              </div>
-            ) : (
-              <div className="stats-grid">
-                {/* Thu nhập */}
-                <div className="dashboard-card income">
-                  <h3>Tổng thu nhập</h3>
-                  <p className="amount income-amount">
-                    {formatAmount(statistics?.totalIncome || 0)}
-                  </p>
+            {/* Cột bên phải */}
+            <div className="dashboard-column side-column">
+              {/* Giao dịch gần đây */}
+              <div className="section">
+                <h2>Giao dịch gần đây</h2>
+                <div className="dashboard-card recent-transactions-card">
+                  <RecentTransactions />
                 </div>
-                
-                {/* Chi tiêu */}
-                <div className="dashboard-card expense">
-                  <h3>Tổng chi tiêu</h3>
-                  <p className="amount expense-amount">
-                    {formatAmount(statistics?.totalExpense || 0)}
-                  </p>
-                </div>
-                
-                {/* Số dư */}
-                <div className="dashboard-card balance">
-                  <h3>Số dư</h3>
-                  <p className={`amount ${statistics?.balance >= 0 ? 'balance-positive' : 'balance-negative'}`}>
-                    {formatAmount(statistics?.balance || 0)}
+              </div>
+              
+              <div className="section">
+                <div className="dashboard-card welcome-card">
+                  <h2>Chào mừng bạn đến với hệ thống!</h2>
+                  <p>
+                    Đây là trang dashboard của bạn. Bạn có thể xem thống kê tổng hợp tài chính của mình ở đây.
+                    Sử dụng thanh bên để truy cập các chức năng khác của ứng dụng.
                   </p>
                 </div>
               </div>
-            )}
-          </div>
-          
-          {/* Biểu đồ thu chi theo tháng */}
-          <div className="section">
-            <h2>Biểu đồ thu chi theo tháng</h2>
-            <div className="dashboard-card chart-card">
-              <MonthlyChart year={new Date().getFullYear()} />
-            </div>
-          </div>
-          
-          {/* Biểu đồ chi tiêu theo danh mục */}
-          <div className="section">
-            <h2>Chi tiêu theo danh mục</h2>
-            <div className="dashboard-card chart-card">
-              <CategorySpendingChart 
-                month={new Date().getMonth() + 1} 
-                year={new Date().getFullYear()} 
-              />
-            </div>
-          </div>
-          
-          {/* Giao dịch gần đây */}
-          <div className="section">
-            <h2>Giao dịch gần đây</h2>
-            <div className="dashboard-card">
-              <RecentTransactions />
-            </div>
-          </div>
-          
-          <div className="section">
-            <div className="dashboard-card welcome-card">
-              <h2>Chào mừng bạn đến với hệ thống!</h2>
-              <p>
-                Đây là trang dashboard của bạn. Bạn có thể xem thống kê tổng hợp tài chính của mình ở đây.
-                Sử dụng thanh bên để truy cập các chức năng khác của ứng dụng.
-              </p>
             </div>
           </div>
         </div>
@@ -173,6 +225,7 @@ const Dashboard = () => {
   );
 };
 
+// Styled component cho dashboard
 const StyledDashboard = styled.div`
   --input-focus: #5A67D8;
   --font-color: #2D3748;
@@ -186,106 +239,128 @@ const StyledDashboard = styled.div`
   
   padding: 20px;
   background-color: var(--bg-color-alt);
+  min-height: 100%;
   
   .dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
   }
   
-  .dashboard-title {
+  .page-title {
     font-size: 28px;
     font-weight: 900;
     color: var(--main-color);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .date-selector-container {
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 12px 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+  
+  .dashboard-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .main-column {
+    flex: 2;
+  }
+  
+  .side-column {
+    flex: 1;
+  }
+  
+  .section {
+    margin-bottom: 20px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    > h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 12px;
+      text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+    }
   }
   
   .dashboard-card {
-    padding: 20px;
     background: var(--bg-color);
     border-radius: 8px;
     border: 2px solid var(--main-color);
     box-shadow: 4px 4px var(--main-color);
-    margin-bottom: 20px;
+    padding: 15px;
+    margin-bottom: 15px;
     transition: transform 0.2s;
     
     &:hover {
       transform: translateY(-2px);
     }
     
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
     h2 {
-      margin: 0 0 16px;
       font-size: 18px;
       font-weight: 700;
       color: var(--main-color);
+      margin-bottom: 12px;
     }
     
     h3 {
       font-size: 16px;
       font-weight: 600;
       color: var(--main-color);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
   }
   
-  .section {
-    margin-bottom: 30px;
-    
-    > h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--main-color);
-      margin-bottom: 16px;
-    }
+  .chart-card {
+    padding: 15px;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
   }
   
-  .user-info {
-    background: var(--bg-color);
-    
-    .user-info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-    
-    .label {
-      font-size: 14px;
-      color: var(--font-color-sub);
-      margin-bottom: 4px;
-    }
-    
-    .value {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--main-color);
-    }
+  .recent-transactions-card {
+    height: auto;
+    padding: 12px;
   }
   
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
   }
   
-  .income {
-    h3 {
-      color: var(--green-color);
-    }
+  .income h3 {
+    color: var(--green-color);
   }
   
-  .expense {
-    h3 {
-      color: var(--red-color);
-    }
+  .expense h3 {
+    color: var(--red-color);
   }
   
-  .balance {
-    h3 {
-      color: var(--input-focus);
-    }
+  .balance h3 {
+    color: var(--input-focus);
   }
   
   .amount {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
   }
   
@@ -298,7 +373,7 @@ const StyledDashboard = styled.div`
   }
   
   .balance-positive {
-    color: var(--input-focus);
+    color: var(--green-color);
   }
   
   .balance-negative {
@@ -310,17 +385,17 @@ const StyledDashboard = styled.div`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 0;
+    padding: 30px 0;
   }
   
   .loading-spinner {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     border: 3px solid rgba(90, 103, 216, 0.1);
     border-radius: 50%;
     border-top-color: var(--input-focus);
     animation: spin 1s ease-in-out infinite;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
   
   @keyframes spin {
@@ -331,7 +406,7 @@ const StyledDashboard = styled.div`
     background-color: #FEE2E2;
     border: 1px solid var(--red-color);
     color: #B91C1C;
-    padding: 16px;
+    padding: 12px;
     border-radius: 8px;
     
     button {
@@ -345,17 +420,46 @@ const StyledDashboard = styled.div`
     }
   }
   
-  .chart-card {
-    padding: 20px;
-    height: 350px;
-  }
-  
   .welcome-card {
-    background-color: var(--bg-color);
+    background-color: #EFF6FF;
+    border-left: 4px solid var(--input-focus);
     
     p {
       color: var(--font-color-sub);
       line-height: 1.6;
+    }
+  }
+  
+  .date-selector {
+    display: flex;
+    gap: 15px;
+    
+    select {
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: 2px solid var(--main-color);
+      background-color: var(--bg-color);
+      box-shadow: 2px 2px var(--main-color);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--font-color);
+      outline: none;
+      
+      &:focus {
+        border-color: var(--input-focus);
+      }
+    }
+    
+    label {
+      font-weight: 600;
+      color: var(--main-color);
+      margin-right: 8px;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
     }
   }
   
@@ -367,7 +471,24 @@ const StyledDashboard = styled.div`
     }
     
     .dashboard-card {
-      padding: 16px;
+      padding: 12px;
+    }
+    
+    .chart-card {
+      height: 250px;
+    }
+    
+    .date-selector {
+      flex-direction: column;
+      gap: 10px;
+      
+      > div {
+        width: 100%;
+        
+        select {
+          width: 100%;
+        }
+      }
     }
   }
 `;

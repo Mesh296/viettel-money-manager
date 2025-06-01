@@ -19,16 +19,16 @@ ChartJS.register(
 
 // Mảng các màu cho các danh mục
 const CHART_COLORS = [
-  'rgba(255, 99, 132, 0.6)',   // Đỏ
-  'rgba(54, 162, 235, 0.6)',   // Xanh dương
-  'rgba(255, 206, 86, 0.6)',   // Vàng
-  'rgba(75, 192, 192, 0.6)',   // Xanh lá
-  'rgba(153, 102, 255, 0.6)',  // Tím
-  'rgba(255, 159, 64, 0.6)',   // Cam
-  'rgba(199, 199, 199, 0.6)',  // Xám
-  'rgba(83, 102, 255, 0.6)',   // Xanh dương nhạt
-  'rgba(255, 99, 255, 0.6)',   // Hồng
-  'rgba(24, 144, 122, 0.6)',   // Lục lam
+  'rgba(255, 99, 132, 0.8)',   // Đỏ
+  'rgba(54, 162, 235, 0.8)',   // Xanh dương
+  'rgba(255, 206, 86, 0.8)',   // Vàng
+  'rgba(75, 192, 192, 0.8)',   // Xanh lá
+  'rgba(153, 102, 255, 0.8)',  // Tím
+  'rgba(255, 159, 64, 0.8)',   // Cam
+  'rgba(199, 199, 199, 0.8)',  // Xám
+  'rgba(83, 102, 255, 0.8)',   // Xanh dương nhạt
+  'rgba(255, 99, 255, 0.8)',   // Hồng
+  'rgba(24, 144, 122, 0.8)',   // Lục lam
 ];
 
 const CategorySpendingChart = ({ month = null, year = null }) => {
@@ -98,7 +98,7 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
         }
         
         const backgroundColors = labels.map((_, index) => CHART_COLORS[index % CHART_COLORS.length]);
-        const borderColors = backgroundColors.map(color => color.replace('0.6', '1'));
+        const borderColors = backgroundColors.map(color => color.replace('0.8', '1'));
         
         setChartData({
           labels,
@@ -132,12 +132,43 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
     plugins: {
       legend: {
         position: 'right',
+        labels: {
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#2D3748', // Màu chữ đậm hơn
+          padding: 15,
+          boxWidth: 15,
+          usePointStyle: true,
+        }
       },
       title: {
         display: true,
         text: `Chi tiêu theo danh mục tháng ${month || new Date().getMonth() + 1}/${year || new Date().getFullYear()}`,
+        font: {
+          size: 16,
+          weight: 'bold'
+        },
+        color: '#2D3748', // Màu chữ đậm hơn
+        padding: {
+          bottom: 15
+        }
       },
       tooltip: {
+        titleFont: {
+          size: 14,
+          weight: 'bold'
+        },
+        bodyFont: {
+          size: 14
+        },
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#FFFFFF',
+        bodyColor: '#FFFFFF',
+        padding: 10,
+        boxPadding: 5,
+        cornerRadius: 4,
         callbacks: {
           label: function(context) {
             const label = context.label || '';
@@ -174,7 +205,7 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
   }
 
   return (
-    <div className="h-80">
+    <div className="h-full">
       {chartData && <Pie data={chartData} options={chartOptions} />}
     </div>
   );

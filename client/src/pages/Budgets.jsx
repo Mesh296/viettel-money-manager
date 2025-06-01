@@ -366,16 +366,13 @@ const Budgets = () => {
         
         // Tải thông tin chi tiêu theo tháng
         if (isCurrentMonthSelected) {
-          // Chỉ tính toán chi tiêu cho tháng hiện tại
+          // Tính toán chi tiêu cho tháng hiện tại
           await fetchTransactionsByCategoryDirect(selectedMonth, selectedYear);
           await fetchMonthlySummary(selectedMonth, selectedYear);
         } else {
-          // Cho tháng trước, đặt chi tiêu = 0 vì không có dữ liệu chính xác
-          setMonthlyBudget(prev => ({
-            ...prev,
-            spent: 0
-          }));
-          setCategorySpending({});
+          // Cho các tháng khác, vẫn cần tải dữ liệu chi tiêu thực tế
+          await fetchTransactionsByCategoryDirect(selectedMonth, selectedYear);
+          await fetchMonthlySummary(selectedMonth, selectedYear);
         }
         
         // Tải ngân sách danh mục theo tháng
