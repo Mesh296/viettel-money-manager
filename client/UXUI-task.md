@@ -76,6 +76,22 @@ Trang Codecademy Python có giao diện tối giản, sử dụng bảng màu s�
 - **Loading:** Spinner pixel (hình vuông quay) cho trạng thái tải.
 - **Toast:** Trượt từ trên phải xuống với hiệu ứng nảy pixel nhẹ.
 
+## 8. Card
+Created a pixel-art inspired card design with:
+2px solid borders
+Box shadow effect (4px 4px)
+Hover animation that lifts the cards slightly
+Clean white background with off-white page background
+Consistent typography using the design guidelines
+The new dashboard follows these design principles:
+Light color scheme with cream background (#FFF5E9)
+Card-based UI with pixel-art inspired styling (borders and shadows)
+Consistent color scheme matching the UXUI-task guidelines:
+Blue (#5A67D8) for main actions and interactive elements
+Green (#48BB78) for income indicators
+Red (#F56565) for expense indicators
+Clear typography with dark headings and lighter body text
+
 ---
 
 # Nhiệm vụ cho AI Frontend

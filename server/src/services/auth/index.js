@@ -2,6 +2,7 @@ const { RefreshToken } = require('../../models')
 const { User } = require('../../models')
 const { randomBytes } = require('crypto')
 const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
 dotenv.config();
 
 const SECRET_KEY = process.env.JWT_SECRET

@@ -1,5 +1,6 @@
 const express = require('express');
 const userService = require('../../services/users');
+const refreshTokenService = require('../../services/auth');
 
 const register = async (req, res) => {
     try {
@@ -21,6 +22,23 @@ const login = async (req, res) => {
     } catch (error) {
         return res.status(400).json({
             message: error.message || 'Error logining user'
+        });
+    }
+}
+
+const refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res.status(400).json({
+                message: 'Refresh token is required'
+            });
+        }
+        const data = await refreshTokenService.refresh(refreshToken);
+        return res.status(200).json(data);
+    } catch (error) {
+        return res.status(401).json({
+            message: error.message || 'Error refreshing token'
         });
     }
 }
@@ -63,6 +81,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
     register,
     login,
+    refreshToken,
     getAll,
     deleteUser,
     getMe
