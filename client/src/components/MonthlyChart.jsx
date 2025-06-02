@@ -121,7 +121,7 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
             size: 14,
             weight: 'bold'
           },
-          color: '#2D3748' // Màu chữ đậm hơn
+          color: '#2D3748' 
         }
       },
       title: {
@@ -131,7 +131,7 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
           size: 16,
           weight: 'bold'
         },
-        color: '#2D3748' // Màu chữ đậm hơn
+        color: '#2D3748' 
       },
       tooltip: {
         titleFont: {
@@ -157,7 +157,7 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
             size: 12,
             weight: 'bold'
           },
-          color: '#2D3748', // Màu chữ đậm hơn
+          color: '#2D3748', 
           callback: function(value) {
             return new Intl.NumberFormat('vi-VN', {
               style: 'currency',
