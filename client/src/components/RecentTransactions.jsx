@@ -7,6 +7,23 @@ const RecentTransactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Listen for transaction updates from the chatbot
+  useEffect(() => {
+    const handleTransactionUpdate = () => {
+      console.log('Recent transaction refresh triggered by event');
+      setRefreshKey(prevKey => prevKey + 1);
+    };
+    
+    // Add event listener
+    window.addEventListener('transactionsUpdated', handleTransactionUpdate);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('transactionsUpdated', handleTransactionUpdate);
+    };
+  }, []);
   
   // Tải danh sách giao dịch gần đây
   useEffect(() => {
@@ -35,7 +52,7 @@ const RecentTransactions = () => {
     };
     
     fetchRecentTransactions();
-  }, []);
+  }, [refreshKey]);
   
   // Format số tiền
   const formatAmount = (amount) => {

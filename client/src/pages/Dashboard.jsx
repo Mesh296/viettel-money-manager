@@ -48,6 +48,22 @@ const Dashboard = () => {
     }
   }, [user, selectedMonth, selectedYear]);
   
+  // Listen for transaction updates from the chatbot or other components
+  useEffect(() => {
+    const handleTransactionUpdate = () => {
+      console.log('Dashboard refresh triggered by transactionsUpdated event');
+      refreshData();
+    };
+    
+    // Add event listener
+    window.addEventListener('transactionsUpdated', handleTransactionUpdate);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('transactionsUpdated', handleTransactionUpdate);
+    };
+  }, [refreshData]);
+  
   // Tải thống kê khi component mount hoặc khi tháng/năm thay đổi
   useEffect(() => {
     refreshData();

@@ -136,41 +136,6 @@ async function processChat(userId, message) {
     // Handle common patterns directly without API call when possible
     const lowerCaseMessage = message.toLowerCase().trim();
     
-    // Handle common queries directly
-    if (lowerCaseMessage === 'chi tiêu tháng này' || lowerCaseMessage === 'giao dịch tháng này') {
-      console.log('Using direct pattern match for common query:', lowerCaseMessage);
-      // Get current month data
-      const today = new Date();
-      const startDate = `01-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-      const endDate = `${lastDay}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
-      
-      // Use the search transactions intent directly
-      const data = {
-        type: "expense",
-        startDate,
-        endDate
-      };
-      
-      try {
-        const result = await processIntent(userId, {
-          intent: "search_transactions",
-          response: "Danh sách giao dịch tháng này:",
-          data
-        }, conversation);
-        
-        conversation.history.push(
-          { role: 'user', content: message },
-          { role: 'assistant', content: "Danh sách giao dịch tháng này:" }
-        );
-        
-        conversation.lastUpdated = Date.now();
-        return result;
-      } catch (error) {
-        console.error('Error processing direct pattern match:', error);
-        // Continue with API call as fallback
-      }
-    }
 
     // Prepare system prompt
     const systemPrompt = `
@@ -294,8 +259,42 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
         // Try to extract intent from message based on common patterns
         let result;
         
-        // Additional pattern matching
-        if (/^chi (\d+)[kK]/.test(lowerCaseMessage)) {
+        // Pattern for monthly expense report
+        if (lowerCaseMessage === 'chi tiêu tháng này' || lowerCaseMessage === 'giao dịch tháng này') {
+          console.log('Using direct pattern match for common query:', lowerCaseMessage);
+          // Get current month data
+          const today = new Date();
+          const startDate = `01-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+          const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+          const endDate = `${lastDay}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+          
+          try {
+            // Use search transactions intent directly
+            result = await processIntent(userId, {
+              intent: "search_transactions",
+              response: "Danh sách giao dịch tháng này:",
+              data: {
+                type: "expense",
+                startDate,
+                endDate
+              }
+            }, conversation);
+            
+            // Add to conversation history
+            conversation.history.push(
+              { role: 'user', content: message },
+              { role: 'assistant', content: "Danh sách giao dịch tháng này:" }
+            );
+            
+            conversation.lastUpdated = Date.now();
+            return result;
+          } catch (processError) {
+            console.error('Error processing search pattern:', processError);
+          }
+        }
+        
+        // Pattern for expense creation
+        else if (/^chi (\d+)[kK]/.test(lowerCaseMessage)) {
           // Example: "chi 25k" - try to extract amount and map to a category
           const match = lowerCaseMessage.match(/^chi (\d+)[kK]/);
           if (match && match[1]) {
@@ -337,14 +336,18 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
               conversation.lastUpdated = Date.now();
               return result;
             } catch (processError) {
-              console.error('Error processing direct pattern match:', processError);
+              console.error('Error processing create transaction pattern:', processError);
             }
           }
         }
         
         // Fall back to generic message if no specific pattern matched
         return {
-          reply: 'Xin lỗi, hệ thống đang bận. Vui lòng thử lại sau một lúc.'
+          reply: 'Xin lỗi, hệ thống đang bận. Vui lòng thử lại sau một lúc.',
+          toast: {
+            type: 'error',
+            message: 'Hệ thống đang quá tải. Vui lòng thử lại sau.'
+          }
         };
       }
       
@@ -382,11 +385,22 @@ async function processIntent(userId, aiResponse, conversation) {
         return {
           reply: result ? 
             `✅ Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫ thành công.` :
-            `❌ Lỗi: Không thể tạo giao dịch`
+            `❌ Lỗi: Không thể tạo giao dịch`,
+          toast: result ? {
+            type: 'success',
+            message: `Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫`
+          } : null,
+          refreshData: result ? true : false
         };
       } catch (error) {
         console.error('Create transaction error:', error);
-        return { reply: `❌ Lỗi: ${error.message || 'Không thể tạo giao dịch'}` };
+        return { 
+          reply: `❌ Lỗi: ${error.message || 'Không thể tạo giao dịch'}`,
+          toast: {
+            type: 'error',
+            message: `Lỗi: ${error.message || 'Không thể tạo giao dịch'}`
+          }
+        };
       }
     }
 
@@ -441,10 +455,23 @@ async function processIntent(userId, aiResponse, conversation) {
     case 'update_transaction': {
       try {
         const result = await transactionService.updateTransaction(data.transactionId, userId, data.updates);
-        return { reply: result ? 'Cập nhật giao dịch thành công.' : 'Không thể cập nhật giao dịch.' };
+        return { 
+          reply: result ? 'Cập nhật giao dịch thành công.' : 'Không thể cập nhật giao dịch.',
+          toast: result ? {
+            type: 'success',
+            message: 'Cập nhật giao dịch thành công'
+          } : null,
+          refreshData: result ? true : false
+        };
       } catch (error) {
         console.error('Update transaction error:', error);
-        return { reply: 'Không thể cập nhật giao dịch: ' + error.message };
+        return { 
+          reply: 'Không thể cập nhật giao dịch: ' + error.message,
+          toast: {
+            type: 'error',
+            message: 'Không thể cập nhật giao dịch: ' + error.message
+          }
+        };
       }
     }
 
@@ -452,16 +479,36 @@ async function processIntent(userId, aiResponse, conversation) {
       try {
         // Execute deletion immediately without confirmation
         const result = await transactionService.deleteTransaction(data.transactionId);
-        return { reply: result && result.message ? 'Xóa giao dịch thành công.' : 'Không thể xóa giao dịch.' };
+        return { 
+          reply: result && result.message ? 'Xóa giao dịch thành công.' : 'Không thể xóa giao dịch.',
+          toast: result && result.message ? {
+            type: 'success',
+            message: 'Xóa giao dịch thành công'
+          } : null,
+          refreshData: result && result.message ? true : false
+        };
       } catch (error) {
         console.error('Delete transaction error:', error);
-        return { reply: 'Không thể xóa giao dịch: ' + error.message };
+        return { 
+          reply: 'Không thể xóa giao dịch: ' + error.message,
+          toast: {
+            type: 'error',
+            message: 'Không thể xóa giao dịch: ' + error.message
+          }
+        };
       }
     }
 
     case 'create_category': {
       const result = await categoryService.create(data.name);
-      return { reply: result.success ? `Tạo danh mục "${data.name}" thành công.` : result.message };
+      return { 
+        reply: result.success ? `Tạo danh mục "${data.name}" thành công.` : result.message,
+        toast: result.success ? {
+          type: 'success',
+          message: `Tạo danh mục "${data.name}" thành công.`
+        } : null,
+        refreshData: result.success ? true : false
+      };
     }
 
     default:

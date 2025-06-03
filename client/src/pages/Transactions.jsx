@@ -10,6 +10,22 @@ const Transactions = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'income', 'expense'
 
+  // Listen for transaction updates from the chatbot or other components
+  useEffect(() => {
+    const handleTransactionUpdate = () => {
+      console.log('Main transactions page refresh triggered by event');
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    // Add event listener
+    window.addEventListener('transactionsUpdated', handleTransactionUpdate);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('transactionsUpdated', handleTransactionUpdate);
+    };
+  }, []);
+
   // Callback when a transaction is created or updated
   const handleTransactionChange = () => {
     // Increment to trigger refresh

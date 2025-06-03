@@ -117,7 +117,38 @@ const ChatbotWidget = () => {
         const botReply = { text: response.reply, sender: 'bot' };
         setMessages(prevMessages => [...prevMessages, botReply]);
         
-        // Nếu có function call, hiển thị kết quả
+        // Handle toast notifications if included in the response
+        if (response.toast) {
+          const { type, message } = response.toast;
+          if (type === 'success') {
+            toast.success(message);
+          } else if (type === 'error') {
+            toast.error(message);
+          } else if (type === 'info') {
+            toast.info(message);
+          } else if (type === 'warning') {
+            toast.warning(message);
+          }
+        }
+        
+        // Handle data refresh signal
+        if (response.refreshData) {
+          console.log('Refreshing transaction data...');
+          
+          // Use CustomEvent instead of Event for better compatibility
+          const transactionsEvent = new CustomEvent('transactionsUpdated');
+          window.dispatchEvent(transactionsEvent);
+          
+          // If we created a category, also refresh categories
+          if (response.refreshCategories || 
+            (response.toast && response.toast.message && 
+             response.toast.message.includes('danh mục'))) {
+            const categoriesEvent = new CustomEvent('categoriesUpdated');
+            window.dispatchEvent(categoriesEvent);
+          }
+        }
+        
+        // Nếu có function call, hiển thị kết quả (legacy handling)
         if (response.functionCall) {
           const { name, result } = response.functionCall;
           
@@ -129,7 +160,8 @@ const ChatbotWidget = () => {
                 if (result.success) {
                   toast.success(result.message || 'Đã tạo giao dịch thành công');
                   // Trigger cho các component khác cập nhật
-                  window.dispatchEvent(new Event('transactionsUpdated'));
+                  const transactionsEvent = new CustomEvent('transactionsUpdated');
+                  window.dispatchEvent(transactionsEvent);
                 } else {
                   toast.error(result.message || 'Không thể tạo giao dịch');
                 }
@@ -138,7 +170,8 @@ const ChatbotWidget = () => {
               case 'updateTransaction':
                 if (result.success) {
                   toast.success(result.message || 'Đã cập nhật giao dịch thành công');
-                  window.dispatchEvent(new Event('transactionsUpdated'));
+                  const transactionsEvent = new CustomEvent('transactionsUpdated');
+                  window.dispatchEvent(transactionsEvent);
                 } else {
                   toast.error(result.message || 'Không thể cập nhật giao dịch');
                 }
@@ -147,7 +180,8 @@ const ChatbotWidget = () => {
               case 'deleteTransaction':
                 if (result.success) {
                   toast.success(result.message || 'Đã xóa giao dịch thành công');
-                  window.dispatchEvent(new Event('transactionsUpdated'));
+                  const transactionsEvent = new CustomEvent('transactionsUpdated');
+                  window.dispatchEvent(transactionsEvent);
                 } else {
                   toast.error(result.message || 'Không thể xóa giao dịch');
                 }
@@ -156,7 +190,8 @@ const ChatbotWidget = () => {
               case 'createCategory':
                 if (result.success) {
                   toast.success(result.message || 'Đã tạo danh mục thành công');
-                  window.dispatchEvent(new Event('categoriesUpdated'));
+                  const categoriesEvent = new CustomEvent('categoriesUpdated');
+                  window.dispatchEvent(categoriesEvent);
                 } else {
                   toast.error(result.message || 'Không thể tạo danh mục');
                 }
