@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import { IconContext } from "react-icons";
 import styled from 'styled-components';
+import ChatbotWidget from './ChatbotWidget';
 
 const MainLayout = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -22,6 +23,9 @@ const MainLayout = ({ children }) => {
             {children}
           </div>
         </div>
+
+        {/* Chatbot Widget - chỉ hiển thị khi đã đăng nhập */}
+        {isAuthenticated && <ChatbotWidget />}
       </StyledLayout>
     </IconContext.Provider>
   );
