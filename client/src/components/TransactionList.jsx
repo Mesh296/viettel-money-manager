@@ -46,10 +46,11 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
         
         // Sort transactions by date added (newest first)
         transactionsData.sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.date);
-          const dateB = new Date(b.createdAt || b.date);
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
           return dateB - dateA; // Newest first
         });
+
         
         console.log('Transactions loaded:', transactionsData);
         setTransactions(transactionsData);
