@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import RecentTransactions from '../components/RecentTransactions';
 import MonthlyChart from '../components/MonthlyChart';
 import CategorySpendingChart from '../components/CategorySpendingChart';
+import CategoryTrendChart from '../components/CategoryTrendChart';
 import AlertWidget from '../components/AlertWidget';
 import MainLayout from '../components/MainLayout';
 import styled from 'styled-components';
@@ -135,7 +136,7 @@ const Dashboard = () => {
             {/* Cột bên trái */}
             <div className="dashboard-column main-column">
               <div className="section">
-                <h2>Thống kê tháng {statistics?.monthName || ''}</h2>
+                <h2>Thống kê {statistics?.monthName || ''} năm {statistics?.year}</h2>
                 
                 {loading ? (
                   <div className="loading-container">
@@ -150,29 +151,31 @@ const Dashboard = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="stats-grid">
-                    {/* Thu nhập */}
-                    <div className="dashboard-card income">
-                      <h3>Tổng thu nhập</h3>
-                      <p className="amount income-amount">
-                        {formatAmount(statistics?.totalIncome || 0)}
-                      </p>
-                    </div>
-                    
-                    {/* Chi tiêu */}
-                    <div className="dashboard-card expense">
-                      <h3>Tổng chi tiêu</h3>
-                      <p className="amount expense-amount">
-                        {formatAmount(statistics?.totalExpense || 0)}
-                      </p>
-                    </div>
-                    
-                    {/* Số dư */}
-                    <div className="dashboard-card balance">
-                      <h3>Số dư</h3>
-                      <p className={`amount ${statistics?.balance >= 0 ? 'balance-positive' : 'balance-negative'}`}>
-                        {formatAmount(statistics?.balance || 0)}
-                      </p>
+                  <div className="dashboard-card combined-stats-card">
+                    <div className="stats-summary">
+                      {/* Thu nhập */}
+                      <div className="stat-item income">
+                        <h3>Tổng thu nhập</h3>
+                        <p className="amount income-amount">
+                          {formatAmount(statistics?.totalIncome || 0)}
+                        </p>
+                      </div>
+                      
+                      {/* Chi tiêu */}
+                      <div className="stat-item expense">
+                        <h3>Tổng chi tiêu</h3>
+                        <p className="amount expense-amount">
+                          {formatAmount(statistics?.totalExpense || 0)}
+                        </p>
+                      </div>
+                      
+                      {/* Số dư */}
+                      <div className="stat-item balance">
+                        <h3>Số dư</h3>
+                        <p className={`amount ${statistics?.balance >= 0 ? 'balance-positive' : 'balance-negative'}`}>
+                          {formatAmount(statistics?.balance || 0)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -196,6 +199,17 @@ const Dashboard = () => {
                   />
                 </div>
               </div>
+              
+              {/* Biểu đồ xu hướng chi tiêu theo danh mục */}
+              <div className="section">
+                <h2>Xu hướng chi tiêu theo danh mục</h2>
+                <div className="dashboard-card chart-card">
+                  <CategoryTrendChart 
+                    year={selectedYear} 
+                    maxCategories={5} 
+                  />
+                </div>
+              </div>
             </div>
             
             {/* Cột bên phải */}
@@ -205,16 +219,6 @@ const Dashboard = () => {
                 <h2>Giao dịch gần đây</h2>
                 <div className="dashboard-card recent-transactions-card">
                   <RecentTransactions />
-                </div>
-              </div>
-              
-              <div className="section">
-                <div className="dashboard-card welcome-card">
-                  <h2>Chào mừng bạn đến với hệ thống!</h2>
-                  <p>
-                    Đây là trang dashboard của bạn. Bạn có thể xem thống kê tổng hợp tài chính của mình ở đây.
-                    Sử dụng thanh bên để truy cập các chức năng khác của ứng dụng.
-                  </p>
                 </div>
               </div>
             </div>
@@ -271,6 +275,7 @@ const StyledDashboard = styled.div`
     display: flex;
     flex-direction: column;
     gap: 20px;
+    
   }
   
   .main-column {
@@ -338,13 +343,49 @@ const StyledDashboard = styled.div`
   
   .recent-transactions-card {
     height: auto;
+    max-height: 230px;
     padding: 12px;
+    overflow-y: auto;
   }
   
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
+  }
+  
+  .combined-stats-card {
+    padding: 20px;
+  }
+  
+  .stats-summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
+  }
+  
+  .stat-item {
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+    padding: 15px;
+    border-radius: 6px;
+    
+    &.income {
+      border-left: 4px solid var(--green-color);
+      background-color: rgba(72, 187, 120, 0.1);
+    }
+    
+    &.expense {
+      border-left: 4px solid var(--red-color);
+      background-color: rgba(245, 101, 101, 0.1);
+    }
+    
+    &.balance {
+      border-left: 4px solid var(--input-focus);
+      background-color: rgba(90, 103, 216, 0.1);
+    }
   }
   
   .income h3 {
@@ -420,16 +461,6 @@ const StyledDashboard = styled.div`
     }
   }
   
-  .welcome-card {
-    background-color: #EFF6FF;
-    border-left: 4px solid var(--input-focus);
-    
-    p {
-      color: var(--font-color-sub);
-      line-height: 1.6;
-    }
-  }
-  
   .date-selector {
     display: flex;
     gap: 15px;
@@ -466,8 +497,13 @@ const StyledDashboard = styled.div`
   @media (max-width: 768px) {
     padding: 10px;
     
-    .stats-grid {
-      grid-template-columns: 1fr;
+    .stats-summary {
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .stat-item {
+      width: 100%;
     }
     
     .dashboard-card {

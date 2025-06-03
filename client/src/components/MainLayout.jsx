@@ -43,7 +43,6 @@ const StyledLayout = styled.div`
   .content-column {
     grid-column: 2 / -1;
     padding: 24px;
-    margin-left: ${props => props.isAuthenticated ? '280px' : '0'};
   }
   
   .content-container {

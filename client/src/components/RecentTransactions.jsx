@@ -21,7 +21,7 @@ const RecentTransactions = () => {
           const dateA = new Date(a.date);
           const dateB = new Date(b.date);
           return dateB - dateA;
-        }).slice(0, 3) : [];
+        }).slice(0, 4) : [];
         
         setTransactions(sortedData);
         setError(null);
