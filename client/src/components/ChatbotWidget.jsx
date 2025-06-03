@@ -264,7 +264,7 @@ const ChatbotWidget = () => {
           _
         </button>
       </div>
-      <div style={messagesContainerStyles}>
+      <div style={messagesContainerStyles} className='h-[20rem]'> 
         {messages.map((msg, index) => (
           <div key={index} style={messageBubbleStyles(msg.sender === 'user')}>
             {msg.text}
