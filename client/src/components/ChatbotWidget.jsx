@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { sendMessageToChatbot } from '../services/chatbot'; // Sẽ tạo service này sau
+import { sendMessageToChatbot } from '../services/chatbot'; 
 import { toast } from 'react-toastify';
 
 // Basic styling, can be improved later with Tailwind/StyledComponents
@@ -163,10 +163,14 @@ const ChatbotWidget = () => {
                 break;
               
               case 'searchTransactions':
-                // Không cần hiển thị lại kết quả vì đã có trong phản hồi
-                if (result.success) {
-                  // Chỉ hiển thị thông báo toast mà không thêm tin nhắn mới
-                  window.dispatchEvent(new Event('transactionsUpdated'));
+                // Kiểm tra xem có kết quả được định dạng sẵn không
+                if (result.success && result.formattedTransactions) {
+                  // Hiển thị kết quả đã được định dạng trong một tin nhắn riêng
+                  const resultsMessage = { 
+                    text: result.formattedTransactions, 
+                    sender: 'bot' 
+                  };
+                  setMessages(prevMessages => [...prevMessages, resultsMessage]);
                 }
                 break;
             }
@@ -177,8 +181,21 @@ const ChatbotWidget = () => {
       }
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
+      
+      // Hiển thị tin nhắn lỗi thân thiện hơn cho người dùng
+      let errorMessage = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.';
+      
+      if (error.response?.data) {
+        // Kiểm tra xem có phải lỗi Gemini API không
+        if (error.response.data.type === 'AI_SERVICE_ERROR') {
+          errorMessage = 'Dịch vụ AI đang gặp sự cố. Vui lòng thử lại sau ít phút.';
+        } else if (error.response.status === 401) {
+          errorMessage = 'Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.';
+        }
+      }
+      
       toast.error('Có lỗi xảy ra khi gửi tin nhắn.');
-      setMessages(prevMessages => [...prevMessages, { text: 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.', sender: 'bot' }]);
+      setMessages(prevMessages => [...prevMessages, { text: errorMessage, sender: 'bot' }]);
     }
     setIsLoading(false);
   };
