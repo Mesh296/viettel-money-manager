@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaChartPie, FaExchangeAlt, FaTags, FaWallet, FaBell, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaChartPie, FaExchangeAlt, FaWallet, FaBell, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import styled from 'styled-components';
 
 const Sidebar = () => {
@@ -51,15 +51,7 @@ const Sidebar = () => {
                     <span>Giao dịch</span>
                   </Link>
                 </li>
-                <li>
-                  <Link 
-                    to="/categories" 
-                    className={`nav-link ${isActive('/categories') ? 'active' : ''}`}
-                  >
-                    <FaTags className="nav-icon" />
-                    <span>Danh mục</span>
-                  </Link>
-                </li>
+          
                 <li>
                   <Link 
                     to="/budgets" 

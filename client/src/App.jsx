@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
-import Categories from './pages/Categories';
 import Budgets from './pages/Budgets';
 import Alerts from './pages/Alerts';
 import { ToastContainer, toast } from 'react-toastify';
@@ -62,14 +61,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Transactions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/categories"
-            element={
-              <ProtectedRoute>
-                <Categories />
               </ProtectedRoute>
             }
           />

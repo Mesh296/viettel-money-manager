@@ -19,10 +19,16 @@ const Alerts = () => {
       setLoading(true);
       const data = await getUserAlerts();
       console.log('DEBUG - Alerts page: Alerts fetched:', data);
-      
+
       // Make sure data is an array
       if (Array.isArray(data)) {
-        setAlerts(data);
+        // Sort by newest first based on triggered_at
+        const sortedAlerts = [...data].sort((a, b) => {
+          const dateA = new Date(a.triggered_at);
+          const dateB = new Date(b.triggered_at);
+          return dateB - dateA; // Newest first
+        });
+        setAlerts(sortedAlerts);
       } else {
         console.warn('Alerts page: getUserAlerts did not return an array', data);
         setAlerts([]);
@@ -39,15 +45,15 @@ const Alerts = () => {
 
   useEffect(() => {
     fetchAlerts();
-    
+
     // Also listen for alertsUpdated event
     const handleAlertsUpdated = () => {
       console.log('DEBUG - Alerts page: Alert update event received');
       fetchAlerts();
     };
-    
+
     window.addEventListener('alertsUpdated', handleAlertsUpdated);
-    
+
     return () => {
       window.removeEventListener('alertsUpdated', handleAlertsUpdated);
     };
@@ -58,12 +64,12 @@ const Alerts = () => {
     try {
       setTestLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         toast.error('Bạn cần đăng nhập để thực hiện chức năng này');
         return;
       }
-      
+
       // Make sure we match the server's expected alert data format
       // Server requires: message, type, triggered_at
       // Where type must be one of: total_limit, category_limit, income_vs_expense
@@ -72,15 +78,15 @@ const Alerts = () => {
         type: 'total_limit', // Valid alert type per server requirements
         triggered_at: new Date().toISOString() // Use ISO format for dates
       };
-      
+
       await axios.post(`${API_URL}/alerts/create`, alertData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      
+
       toast.success('Đã tạo cảnh báo thử nghiệm!');
-      
+
       // Tải lại danh sách cảnh báo
       await fetchAlerts();
     } catch (error) {
@@ -91,41 +97,41 @@ const Alerts = () => {
       setTestLoading(false);
     }
   };
-  
+
   // Hàm xóa cảnh báo
   const handleDeleteAlert = async (alertId) => {
     if (!alertId) {
       toast.error('ID cảnh báo không hợp lệ');
       return;
     }
-    
+
     try {
       // Mark only this specific alert as being deleted
-      setAlerts(currentAlerts => 
-        currentAlerts.map(alert => 
-          alert.alertId === alertId 
-            ? { ...alert, isDeleting: true } 
+      setAlerts(currentAlerts =>
+        currentAlerts.map(alert =>
+          alert.alertId === alertId
+            ? { ...alert, isDeleting: true }
             : alert
         )
       );
-      
+
       // Delete the alert from the server
       await deleteAlert(alertId);
       toast.success('Đã xóa cảnh báo');
-      
+
       // Remove only the deleted alert from the UI
-      setAlerts(currentAlerts => 
+      setAlerts(currentAlerts =>
         currentAlerts.filter(alert => alert.alertId !== alertId)
       );
     } catch (error) {
       console.error('Error deleting alert:', error);
       toast.error('Không thể xóa cảnh báo. Vui lòng thử lại sau.');
-      
+
       // Remove the isDeleting flag from the alert if deletion failed
-      setAlerts(currentAlerts => 
-        currentAlerts.map(alert => 
-          alert.alertId === alertId 
-            ? { ...alert, isDeleting: false } 
+      setAlerts(currentAlerts =>
+        currentAlerts.map(alert =>
+          alert.alertId === alertId
+            ? { ...alert, isDeleting: false }
             : alert
         )
       );
@@ -133,47 +139,47 @@ const Alerts = () => {
       setDeleteLoading(false);
     }
   };
-  
+
   // Hàm xóa tất cả cảnh báo
   const handleDeleteAllAlerts = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa tất cả cảnh báo?')) {
       return;
     }
-    
+
     try {
       setBulkDeleteLoading(true);
-      
+
       // Lấy tất cả cảnh báo hiện tại
       const currentAlerts = [...alerts];
-      
+
       if (currentAlerts.length === 0) {
         toast.info('Không có cảnh báo nào để xóa');
         return;
       }
-      
+
       // Đánh dấu tất cả cảnh báo đang được xóa
       setAlerts(currentAlerts.map(alert => ({ ...alert, isDeleting: true })));
-      
+
       // Xóa từng cảnh báo
-      const deletePromises = currentAlerts.map(alert => 
+      const deletePromises = currentAlerts.map(alert =>
         deleteAlert(alert.alertId)
       );
-      
+
       await Promise.all(deletePromises);
-      
+
       toast.success(`Đã xóa ${currentAlerts.length} cảnh báo`);
       setAlerts([]);
     } catch (error) {
       console.error('Error deleting all alerts:', error);
       toast.error('Không thể xóa tất cả cảnh báo. Vui lòng thử lại sau.');
-      
+
       // Tải lại danh sách cảnh báo
       await fetchAlerts();
     } finally {
       setBulkDeleteLoading(false);
     }
   };
-  
+
   // Hàm kiểm tra cảnh báo để gỡ lỗi
   const debugAlerts = async () => {
     try {
@@ -182,9 +188,9 @@ const Alerts = () => {
         toast.error('Bạn cần đăng nhập để thực hiện chức năng này');
         return;
       }
-      
+
       console.log('DEBUG - Current alerts:', alerts);
-      
+
       // Log alerts to console in table format for better readability
       console.table(alerts.map(alert => ({
         id: alert.alertId,
@@ -192,7 +198,7 @@ const Alerts = () => {
         type: alert.type,
         date: new Date(alert.triggered_at).toLocaleString('vi-VN')
       })));
-      
+
       toast.info('Đã ghi log cảnh báo vào console');
     } catch (error) {
       console.error('Error debugging alerts:', error);
@@ -209,10 +215,10 @@ const Alerts = () => {
       console.error('Invalid date format in alert:', alert.triggered_at);
       formattedDate = 'Không xác định';
     }
-    
+
     return (
-      <div 
-        key={alert.alertId || `alert-${Math.random()}`} 
+      <div
+        key={alert.alertId || `alert-${Math.random()}`}
         className={`alert-item ${alert.type} ${alert.isDeleting ? 'deleting' : ''}`}
       >
         <div className="alert-content">
@@ -238,12 +244,12 @@ const Alerts = () => {
       <StyledAlerts>
         <div className="container">
           <h1 className="page-title">Quản lý cảnh báo</h1>
-          
+
           <div className="section">
             <div className="section-header">
               <h2 className="section-title">Danh sách cảnh báo</h2>
-              
-              <button 
+
+              <button
                 className="action-btn delete-all"
                 onClick={handleDeleteAllAlerts}
                 disabled={bulkDeleteLoading || alerts.length === 0}
@@ -251,7 +257,7 @@ const Alerts = () => {
                 {bulkDeleteLoading ? 'Đang xóa...' : 'Xóa tất cả'}
               </button>
             </div>
-            
+
             <div className="alerts-card">
               {loading ? (
                 <div className="loading-container">
@@ -272,7 +278,7 @@ const Alerts = () => {
               )}
             </div>
           </div>
-          
+
           <div className="section">
             <div className="alerts-info-card">
               <h3>Cài đặt cảnh báo</h3>

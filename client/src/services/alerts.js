@@ -194,8 +194,9 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit, month
           type: alert.type,
           triggered_at: alert.triggered_at
         };
+        console.log('alert tren 100000000000000000000000000:', alertToCreate);
         const result = await createAlert(alertToCreate, false); // Don't show toast again when saving to database
-        console.log('DEBUG - Monthly budget warning saved to database:', result);
+        console.log('Luu vao database khi tren 100:', result);
       } catch (err) {
         console.error('Failed to save warning alert to database:', err);
       }
@@ -229,11 +230,6 @@ export const checkMonthlyBudgetWarning = async (totalExpense, budgetLimit, month
  */
 export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget, categoryName, categoryId, month = null, year = null) => {
   try {
-    console.log('DEBUG - INSIDE checkCategoryBudgetWarning function');
-    console.log('categoryId:', categoryId);
-    console.log('categoryName:', categoryName);
-    console.log('categoryExpense:', categoryExpense, 'type:', typeof categoryExpense);
-    console.log('categoryBudget:', categoryBudget, 'type:', typeof categoryBudget);
 
     // Convert values to numbers if they're not already and ensure they're valid
     const expenseAmount = Number(categoryExpense) || 0;
@@ -310,11 +306,12 @@ export const checkCategoryBudgetWarning = async (categoryExpense, categoryBudget
       try {
         const alertToCreate = {
           message: alert.message,
-          type: alert.type,
+          type: "category_limit",
           triggered_at: alert.triggered_at
         };
+        console.log('alert tren 90:', alertToCreate);
         const result = await createAlert(alertToCreate, false); // Don't show toast again when saving to database
-        console.log('DEBUG - Category budget warning saved to database:', result);
+        console.log('Category budget warning saved to databaseeeeeeeee:', result);
       } catch (err) {
         console.error('Failed to save warning alert to database:', err);
       }
@@ -436,6 +433,7 @@ export const checkMonthlyBudgetAlert = async (totalExpense, budgetLimit, month =
           type: alert.type,
           triggered_at: alert.triggered_at
         };
+        console.log('alert category tren 100000000000000000000000000:', alertToCreate);
         await createAlert(alertToCreate, false); // Explicitly set showToast to false
       } catch (err) {
         console.error('Failed to save alert to database:', err);

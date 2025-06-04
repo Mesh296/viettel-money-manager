@@ -12,6 +12,8 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
   const [currentFilters, setCurrentFilters] = useState({});
   const [isFiltering, setIsFiltering] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [transactionsPerPage] = useState(10);
   
   // Tải danh sách giao dịch
   useEffect(() => {
@@ -51,9 +53,8 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
           return dateB - dateA; // Newest first
         });
 
-        
-        console.log('Transactions loaded:', transactionsData);
         setTransactions(transactionsData);
+        setCurrentPage(1); // Reset to first page when data changes
         setError(null);
       } catch (error) {
         console.error('Error loading transactions:', error);
@@ -187,6 +188,29 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
     }
   };
   
+  // Pagination logic
+  const indexOfLastTransaction = currentPage * transactionsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+  
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  
+  // Go to next page
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  // Go to previous page
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
   // Render bộ lọc
   const renderFilter = () => {
     return <TransactionFilter onFilterChange={handleFilterChange} />;
@@ -275,7 +299,7 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction) => {
+            {currentTransactions.map((transaction) => {
               // Ensure we have a consistent ID value
               const transactionId = transaction.id || transaction.transactionId;
               
@@ -315,6 +339,64 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
             })}
           </tbody>
         </table>
+      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            onClick={prevPage} 
+            disabled={currentPage === 1}
+            className={`pagination-button ${currentPage === 1 ? 'disabled' : ''}`}
+          >
+            &laquo; Trước
+          </button>
+          
+          <div className="pagination-pages">
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNumber = index + 1;
+              // Show current page, first page, last page, and one page before and after current
+              if (
+                pageNumber === 1 || 
+                pageNumber === totalPages || 
+                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={pageNumber}
+                    onClick={() => paginate(pageNumber)}
+                    className={`pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              }
+              
+              // Show ellipsis for gaps
+              if (
+                (pageNumber === 2 && currentPage > 3) || 
+                (pageNumber === totalPages - 1 && currentPage < totalPages - 2)
+              ) {
+                return <span key={pageNumber} className="pagination-ellipsis">...</span>;
+              }
+              
+              return null;
+            })}
+          </div>
+          
+          <button 
+            onClick={nextPage} 
+            disabled={currentPage === totalPages}
+            className={`pagination-button ${currentPage === totalPages ? 'disabled' : ''}`}
+          >
+            Tiếp &raquo;
+          </button>
+        </div>
+      )}
+      
+      {/* Pagination info */}
+      <div className="pagination-info">
+        Hiển thị {indexOfFirstTransaction + 1} - {Math.min(indexOfLastTransaction, transactions.length)} trên tổng số {transactions.length} giao dịch
       </div>
       
       {/* Modal chỉnh sửa giao dịch */}
@@ -534,6 +616,80 @@ const StyledTransactionList = styled.div`
     .delete-button {
       color: var(--red-color);
     }
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 8px;
+  }
+  
+  .pagination-button {
+    padding: 8px 12px;
+    border: 1px solid #E2E8F0;
+    background-color: #FFF;
+    border-radius: 4px;
+    color: var(--input-focus);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    
+    &:hover:not(.disabled) {
+      background-color: #EBF4FF;
+      border-color: var(--input-focus);
+    }
+    
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
+  .pagination-pages {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .pagination-number {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E2E8F0;
+    background-color: #FFF;
+    border-radius: 4px;
+    color: var(--font-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover:not(.active) {
+      background-color: #EBF4FF;
+    }
+    
+    &.active {
+      background-color: var(--input-focus);
+      color: white;
+      border-color: var(--input-focus);
+    }
+  }
+  
+  .pagination-ellipsis {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--font-color-sub);
+  }
+  
+  .pagination-info {
+    text-align: center;
+    margin-top: 12px;
+    color: var(--font-color-sub);
+    font-size: 14px;
   }
   
   // Higher z-index to ensure modal appears above everything

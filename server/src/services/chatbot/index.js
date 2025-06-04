@@ -19,7 +19,7 @@ const userConversations = new Map();
 function formatTransactions(transactions, limit = 5) {
   if (!transactions?.length) return 'Không tìm thấy giao dịch nào.';
   
-  const toShow = transactions.slice(0, limit);
+  const toShow = transactions;
   const formatted = toShow.map((t, idx) => {
     const date = new Date(t.date).toLocaleDateString('vi-VN');
     const amount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(t.amount);
@@ -30,9 +30,7 @@ function formatTransactions(transactions, limit = 5) {
     return `${idx + 1}. ${date}: ${type} ${amount} - ${categoryName}${note} [ID: ${id}]`;
   }).join('\n');
   
-  return transactions.length > limit 
-    ? `${formatted}\n\n... và ${transactions.length - limit} giao dịch khác`
-    : formatted;
+  return formatted
 }
 
 // Helper to get categories for context
@@ -160,13 +158,19 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
 4. Nếu không rõ loại giao dịch, mặc định là "expense".
 5. Chọn danh mục phù hợp từ danh sách hoặc chọn danh mục đầu tiên nếu không tìm thấy.
 6. Định dạng số tiền theo kiểu Việt Nam (1.000.000 ₫).
-7. Đối với "xin chào", trả về:
+7. Đối với "giao dịch tháng ..." (không rõ chi tiêu hay thu nhập), trả về:
+   {
+     "intent": "general_chat",
+     "response": "Bạn muốn xem chi tiêu hay thu nhập cho tháng đó?",
+     "data": {}
+   }
+8. Đối với "xin chào", trả về:
    {
      "intent": "general_chat",
      "response": "Chào bạn! Có gì thú vị hôm nay không?",
      "data": {}
    }
-8. Đối với "chi tiêu tháng này" hoặc "giao dịch tháng này", trả về:
+9. Đối với "chi tiêu tháng này" hoặc "giao dịch tháng này", trả về:
    {
      "intent": "search_transactions",
      "response": "Danh sách giao dịch tháng này:",
@@ -176,7 +180,7 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
        "endDate": "${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}"
      }
    }
-9. Đối với bất kỳ lỗi nào, trả về intent "general_chat" với phản hồi thân thiện.
+10. Đối với bất kỳ lỗi nào, trả về intent "general_chat" với phản hồi thân thiện.
 
 **KHÔNG BAO GIỜ** trả về suy nghĩ, lập luận hay phân tích của bạn. Chỉ trả về JSON trực tiếp.
 
