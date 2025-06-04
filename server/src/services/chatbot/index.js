@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const { Category } = require('../../models');
 const transactionService = require('../transactions');
 const categoryService = require('../categories');
+const { getCache, setCache, deleteCache } = require('../../providers/redis');
 
 dotenv.config();
 
@@ -10,10 +11,7 @@ const apiKey = process.env.OPENROUTER_API_KEY;
 if (!apiKey) throw new Error('OPENROUTER_API_KEY is not defined');
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const CONVERSATION_EXPIRY = 30 * 60 * 1000; // 30 minutes
-
-// Store conversation history
-const userConversations = new Map();
+const CONVERSATION_EXPIRY = 30 * 60; // 30 phút (trong Redis sẽ dùng seconds)
 
 // Helper to format transactions
 function formatTransactions(transactions, limit = 5) {
@@ -35,36 +33,67 @@ function formatTransactions(transactions, limit = 5) {
 
 // Helper to get categories for context
 async function getCategoriesContext() {
+  // Thử lấy từ cache trước
+  const cachedCategories = await getCache('cache:chatbot:categories');
+  if (cachedCategories) {
+    return cachedCategories;
+  }
+
   try {
     const categories = await Category.findAll();
-    return categories.map(cat => ({ id: cat.id, name: cat.name }));
+    const formattedCategories = categories.map(cat => ({ id: cat.id, name: cat.name }));
+    
+    // Cache lại với thời hạn 30 phút
+    await setCache('cache:chatbot:categories', formattedCategories, 1800);
+    
+    return formattedCategories;
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];
   }
 }
 
-// Helper to manage conversation
-function getConversation(userId) {
-  if (userConversations.has(userId) && 
-      Date.now() - userConversations.get(userId).lastUpdated < CONVERSATION_EXPIRY) {
-    return userConversations.get(userId);
-  }
+// Helper to manage conversation in Redis
+async function getConversation(userId) {
+  const redisKey = `cache:chatbot:conversation:${userId}`;
   
-  const conversation = { history: [], lastUpdated: Date.now(), pendingAction: null };
-  userConversations.set(userId, conversation);
-  return conversation;
+  try {
+    // Lấy lịch sử hội thoại từ Redis
+    const conversation = await getCache(redisKey);
+    
+    if (conversation) {
+      // Đặt lại TTL thêm 30 phút
+      await setCache(redisKey, conversation, CONVERSATION_EXPIRY);
+      return conversation;
+    }
+    
+    // Khởi tạo hội thoại mới
+    const newConversation = { history: [], pendingAction: null };
+    await setCache(redisKey, newConversation, CONVERSATION_EXPIRY);
+    return newConversation;
+  } catch (error) {
+    console.error('Redis conversation error:', error);
+    // Fallback nếu Redis lỗi
+    return { history: [], pendingAction: null };
+  }
 }
 
 // Helper to handle errors
-function handleError(error, userId, message, conversation) {
+async function handleError(error, userId, message, conversation) {
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
   const userMessage = 'Xin lỗi, đã xảy ra lỗi. Vui lòng thử lại sau.';
+  
+  // Thêm vào lịch sử hội thoại
   conversation.history.push(
     { role: 'user', content: message },
     { role: 'assistant', content: userMessage }
   );
+  
+  // Lưu lại vào Redis
+  const redisKey = `cache:chatbot:conversation:${userId}`;
+  await setCache(redisKey, conversation, CONVERSATION_EXPIRY);
+  
   return { reply: userMessage, error: error.message };
 }
 
@@ -128,7 +157,7 @@ async function processChat(userId, message) {
   try {
     console.log(`Processing chat for user ${userId}: ${message}`);
     
-    const conversation = getConversation(userId);
+    const conversation = await getConversation(userId);
     const categories = await getCategoriesContext();
     
     // Handle common patterns directly without API call when possible
@@ -241,6 +270,7 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
       // Process intent
       const result = await processIntent(userId, parsedResponse, conversation);
       
+      // Lưu lịch sử hội thoại
       conversation.history.push(
         { role: 'user', content: message },
         { role: 'assistant', content: parsedResponse.response }
@@ -251,7 +281,10 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
         conversation.history = conversation.history.slice(-10);
       }
       
-      conversation.lastUpdated = Date.now();
+      // Cập nhật vào Redis
+      const redisKey = `cache:chatbot:conversation:${userId}`;
+      await setCache(redisKey, conversation, CONVERSATION_EXPIRY);
+      
       return result;
     } catch (error) {
       console.error('API call error:', error.message);
@@ -290,7 +323,6 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
               { role: 'assistant', content: "Danh sách giao dịch tháng này:" }
             );
             
-            conversation.lastUpdated = Date.now();
             return result;
           } catch (processError) {
             console.error('Error processing search pattern:', processError);
@@ -337,7 +369,6 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
                 { role: 'assistant', content: "Tạo giao dịch thành công" }
               );
               
-              conversation.lastUpdated = Date.now();
               return result;
             } catch (processError) {
               console.error('Error processing create transaction pattern:', processError);
@@ -356,11 +387,11 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
       }
       
       console.error('Error in processChat:', error);
-      return handleError(error, userId, message, getConversation(userId));
+      return handleError(error, userId, message, await getConversation(userId));
     }
   } catch (error) {
     console.error('Error in processChat:', error);
-    return handleError(error, userId, message, getConversation(userId));
+    return handleError(error, userId, message, await getConversation(userId));
   }
 }
 

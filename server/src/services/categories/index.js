@@ -1,5 +1,6 @@
 const { Category } = require('../../models');
 const { Sequelzie } = require('sequelize');
+const { deleteCache, deleteCachePattern } = require('../../providers/redis');
 
 const create = async (name) => {
     try {
@@ -18,6 +19,10 @@ const create = async (name) => {
         }
 
         const category = await Category.create({name: name});
+        
+        // Xóa cache khi thêm category mới
+        await deleteCachePattern('cache:/api/categories/all*');
+        
         return category;
     } catch (error) {
         throw new Error(error.message);
@@ -49,6 +54,11 @@ const deleteCategory = async(categoryId) => {
     try {
         console.log(categoryId)
         await Category.destroy({where: {id: categoryId}})
+        
+        // Xóa cache khi xóa category
+        await deleteCachePattern('cache:/api/categories/all*');
+        await deleteCache(`cache:/api/categories/${categoryId}`);
+        
     } catch (error) {
         throw new Error(error.message);
     }

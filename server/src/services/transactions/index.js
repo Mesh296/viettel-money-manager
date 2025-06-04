@@ -1,5 +1,6 @@
 const { Transaction, UserCategory, Budget, User, Category } = require('../../models');
 const { Sequelize } = require('sequelize');
+const { deleteCachePattern } = require('../../providers/redis');
 
 const parseDate = (dateString) => {
     if (!dateString) {
@@ -43,6 +44,12 @@ const create = async (currentUserId, categoryId, type, amount, date = null, note
             date: transactionDate,
             note,
         });
+
+        // Xóa cache thống kê khi thêm giao dịch mới
+        await clearStatisticsCache(currentUserId);
+        // Xóa cache danh sách giao dịch
+        await deleteCachePattern(`cache:/api/transactions/current*:${currentUserId}`);
+        await deleteCachePattern(`cache:/api/transactions/search*:${currentUserId}`);
 
         return transaction;
     } catch (error) {
@@ -104,7 +111,16 @@ const deleteTransaction = async (transactionId) => {
             throw new Error('Transaction not found');
         }
 
+        const userId = transaction.userId;
+        
         await Transaction.destroy({ where: { transactionId: transactionId } });
+        
+        // Xóa cache liên quan sau khi xóa
+        if (userId) {
+            await clearStatisticsCache(userId);
+            await deleteCachePattern(`cache:/api/transactions/*:${userId}`);
+        }
+        
         return { message: 'Transaction deleted successfully' };
     } catch (error) {
         throw new Error(error.message || 'Error deleting transaction');
@@ -445,6 +461,11 @@ const updateTransaction = async (transactionId, userId, updateData) => {
             date: updatedDate,
             note: note !== undefined ? note : transaction.note
         });
+
+        // Xóa cache liên quan sau khi cập nhật
+        await clearStatisticsCache(userId);
+        await deleteCachePattern(`cache:/api/transactions/*:${userId}`);
+        
         return transaction;
     } catch (error) {
         throw new Error(error.message || 'Error updating transaction');
@@ -579,6 +600,16 @@ const searchTransactions = async (userId, options) => {
     }
 };
 
+// Hàm hỗ trợ xóa cache thống kê khi có thay đổi dữ liệu
+const clearStatisticsCache = async (userId) => {
+    try {
+        // Xóa tất cả cache thống kê liên quan đến user này
+        await deleteCachePattern(`cache:stats:*:${userId}:*`);
+    } catch (error) {
+        console.error('Failed to clear statistics cache:', error);
+    }
+};
+
 module.exports = {
     create,
     getAll,
@@ -590,5 +621,6 @@ module.exports = {
     getCategorySpendingStats,
     getIncomeExpenseComparisonStats,
     updateTransaction,
-    searchTransactions
+    searchTransactions,
+    clearStatisticsCache
 };
