@@ -11,7 +11,7 @@ dotenv.config();
 const apiKey = process.env.OPENROUTER_API_KEY;
 if (!apiKey) throw new Error('OPENROUTER_API_KEY is not defined');
 
-const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CONVERSATION_EXPIRY = 30 * 60; // 30 phút (trong Redis sẽ dùng seconds)
 
 // Helper to format transactions
