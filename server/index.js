@@ -5,6 +5,7 @@ const db = require('./src/providers/db.js');
 const routes = require('./src/routes');
 const { sequelize } = require('./src/models/index.js')
 const { connectRedis } = require('./src/providers/redis.js');
+const seedCategories = require('./src/seeds/categories.js')
 
 const app = express();
 app.use(cors());
@@ -26,7 +27,8 @@ app.listen(port, () => {
     try {
         await sequelize.sync({ force: false });
         console.log('All models were synchronized successfully');
-        // Kết nối Redis
+
+        await seedCategories();
         await connectRedis();
     } catch (error) {
         console.error("Error synchronizing models:", error);

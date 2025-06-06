@@ -5,12 +5,13 @@ const transactionService = require('../transactions');
 const categoryService = require('../categories');
 const { getCache, setCache, deleteCache } = require('../../providers/redis');
 
+
 dotenv.config();
 
 const apiKey = process.env.OPENROUTER_API_KEY;
 if (!apiKey) throw new Error('OPENROUTER_API_KEY is not defined');
 
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
 const CONVERSATION_EXPIRY = 30 * 60; // 30 phút (trong Redis sẽ dùng seconds)
 
 // Helper to format transactions
@@ -44,7 +45,7 @@ async function getCategoriesContext() {
     const formattedCategories = categories.map(cat => ({ id: cat.id, name: cat.name }));
     
     // Cache lại với thời hạn 30 phút
-    await setCache('cache:chatbot:categories', formattedCategories, 1800);
+    await setCache('cache:chatbot:categories', formattedCategories, CONVERSATION_EXPIRY);
     
     return formattedCategories;
   } catch (error) {
