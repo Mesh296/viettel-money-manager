@@ -208,12 +208,12 @@ const Alerts = () => {
   // Helper function to render alert based on type
   const renderAlert = (alert) => {
     // Make sure we have a valid date
-    let formattedDate = '';
+    let alertDate;
     try {
-      formattedDate = new Date(alert.triggered_at).toLocaleDateString('vi-VN');
+      alertDate = new Date(alert.triggered_at);
     } catch (e) {
       console.error('Invalid date format in alert:', alert.triggered_at);
-      formattedDate = 'Không xác định';
+      alertDate = new Date();
     }
 
     return (
@@ -221,19 +221,33 @@ const Alerts = () => {
         key={alert.alertId || `alert-${Math.random()}`}
         className={`alert-item ${alert.type} ${alert.isDeleting ? 'deleting' : ''}`}
       >
-        <div className="alert-content">
-          <div className="alert-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="alert-header">
+          <div className="alert-type">
+            {alert.type === 'total_limit' ? 'Vượt ngân sách' : 
+             alert.type === 'category_limit' ? 'Vượt danh mục' : 
+             alert.type === 'income_vs_expense' ? 'Cảnh báo thu chi' : 
+             'Cảnh báo hệ thống'}
           </div>
-          <div className="alert-message">
-            <p className="message">{alert.message || "Cảnh báo hệ thống"}</p>
-            <p className="details">
-              {alert.details && <span className="detail-text">{alert.details}</span>}
-              <span className="date">{formattedDate}</span>
-            </p>
+          
+          <div className="alert-date">
+            {alertDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })} 
+            {' '}
+            {alertDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
           </div>
+        </div>
+        
+        <div className="alert-message">
+          {alert.message || "Cảnh báo hệ thống"}
+        </div>
+        
+        <div className="alert-actions">
+          <button 
+            className="btn-delete" 
+            onClick={() => handleDeleteAlert(alert.alertId)}
+            disabled={alert.isDeleting}
+          >
+            {alert.isDeleting ? 'Đang xóa...' : 'Xóa'}
+          </button>
         </div>
       </div>
     );
@@ -250,7 +264,7 @@ const Alerts = () => {
               <h2 className="section-title">Danh sách cảnh báo</h2>
 
               <button
-                className="action-btn delete-all"
+                className="btn btn-danger"
                 onClick={handleDeleteAllAlerts}
                 disabled={bulkDeleteLoading || alerts.length === 0}
               >
@@ -297,21 +311,21 @@ const Alerts = () => {
 };
 
 const StyledAlerts = styled.div`
-  --input-focus: #5A67D8;
-  --font-color: #2D3748;
-  --font-color-sub: #4A5568;
+  --input-focus: #4E6679;
+  --font-color: #000000;
+  --font-color-sub: #464969;
   --bg-color: #FFF;
   --bg-color-alt: #FFF5E9;
-  --main-color: #2D3748;
-  --green-color: #48BB78;
-  --red-color: #F56565;
-  --yellow-color: #F6E05E;
-  --orange-color: #ED8936;
-  --blue-color: #4299E1;
-  
+  --main-color: #000000;
+  --green-color: #80B878;
+  --red-color: #C7424F;
+  --yellow-color: #F2A561;
+
   padding: 20px;
   background-color: var(--bg-color-alt);
   min-height: 100%;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
   
   .container {
     max-width: 1200px;
@@ -323,69 +337,58 @@ const StyledAlerts = styled.div`
     font-weight: 900;
     color: var(--main-color);
     margin-bottom: 24px;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 12px;
   }
   
-  .section {
-    margin-bottom: 30px;
-    
-    .section-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--main-color);
-      margin-bottom: 16px;
-    }
-    
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-  }
-  
-  .action-card, .alerts-card, .alerts-info-card {
-    background: var(--bg-color);
-    border-radius: 8px;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px var(--main-color);
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: transform 0.2s;
-    
-    &:hover {
-      transform: translateY(-2px);
-    }
-    
-    h2, h3 {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--main-color);
-      margin-bottom: 16px;
-    }
-  }
-  
-  .action-buttons {
+  .section-header {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
+    
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0;
+      color: var(--main-color);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      
+      @media (max-width: 600px) {
+        flex-direction: column;
+        width: 100%;
+      }
+    }
   }
   
-  .action-btn {
+  .btn {
     padding: 8px 16px;
-    border-radius: 5px;
+    border-radius: 0;
     border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
+    background-color: #89D9D9;
+    color: var(--main-color);
     font-weight: 600;
-    color: var(--font-color);
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 3px 3px 0 var(--main-color);
+    font-family: 'Courier New', monospace;
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
+      box-shadow: 5px 5px 0 var(--main-color);
+      background-color: #72B6CF;
     }
     
     &:active:not(:disabled) {
       transform: translateY(0);
+      box-shadow: 2px 2px 0 var(--main-color);
+      background-color: #5C8BA8;
     }
     
     &:disabled {
@@ -393,213 +396,196 @@ const StyledAlerts = styled.div`
       cursor: not-allowed;
     }
     
-    &.create {
-      background-color: var(--green-color);
-      color: white;
+    &.btn-danger {
+      background-color: #C7424F;
+      border-color: var(--main-color);
+      
+      &:hover:not(:disabled) {
+        background-color: #E06B51;
+      }
+      
+      &:active:not(:disabled) {
+        background-color: #942C4B;
+      }
     }
     
-    &.delete-all {
-      background-color: var(--red-color);
-      color: white;
+    @media (max-width: 600px) {
+      width: 100%;
     }
-    
-    &.debug {
-      background-color: var(--yellow-color);
-      color: var(--font-color);
-    }
+  }
+  
+  .alerts-card {
+    background-color: var(--bg-color);
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px 0 var(--main-color);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .empty-alerts {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--font-color-sub);
+    font-style: italic;
+  }
+  
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
   
   .alerts-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-  
-  .alert-item {
-    display: flex;
-    padding: 12px;
-    border-radius: 6px;
-    border-left: 4px solid var(--yellow-color);
-    background-color: rgba(246, 224, 94, 0.1);
+    gap: 16px;
     
-    &.deleting {
-      opacity: 0.6;
-    }
-    
-    &.total_limit {
-      border-left-color: var(--red-color);
-      background-color: rgba(245, 101, 101, 0.1);
-    }
-    
-    &.approaching_total_limit {
-      border-left-color: var(--yellow-color);
-      background-color: rgba(246, 224, 94, 0.1);
-    }
-    
-    &.category_limit {
-      border-left-color: var(--orange-color);
-      background-color: rgba(237, 137, 54, 0.1);
-    }
-    
-    &.income_vs_expense {
-      border-left-color: var(--blue-color);
-      background-color: rgba(66, 153, 225, 0.1);
-    }
-  }
-  
-  .alert-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .alert-icon {
-    width: 24px;
-    height: 24px;
-    
-    svg {
-      width: 100%;
-      height: 100%;
-      
-      .total_limit & {
-        color: var(--red-color);
-      }
-      
-      .approaching_total_limit & {
-        color: var(--yellow-color);
-      }
-      
-      .category_limit & {
-        color: var(--orange-color);
-      }
-      
-      .income_vs_expense & {
-        color: var(--blue-color);
-      }
-    }
-  }
-  
-  .alert-message {
-    .message {
-      font-weight: 600;
-      color: var(--main-color);
-      margin-bottom: 4px;
-    }
-    
-    .details {
-      font-size: 14px;
-      color: var(--font-color-sub);
-      
-      .date {
-        margin-left: 8px;
-        opacity: 0.8;
-      }
-    }
-  }
-  
-  .alert-actions {
-    .delete-btn {
-      width: 32px;
-      height: 32px;
+    .alert-item {
+      border: 2px solid var(--main-color);
+      border-radius: 0;
+      padding: 16px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      transition: all 0.2s;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      background-color: #FFFFFF;
+      box-shadow: 4px 4px 0 var(--main-color);
       
-      &:hover {
-        background-color: rgba(0,0,0,0.05);
+      .alert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        
+        .alert-type {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 0;
+          background-color: var(--yellow-color);
+          color: var(--main-color);
+          font-weight: 600;
+          font-size: 14px;
+          border: 2px solid var(--main-color);
+        }
+        
+        .alert-date {
+          color: var(--font-color-sub);
+          font-size: 14px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
       }
       
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--red-color);
+      .alert-message {
+        font-weight: 600;
+        font-size: 16px;
+        padding: 8px 0;
+        border-bottom: 1px solid #E2E8F0;
+        border-top: 1px solid #E2E8F0;
       }
       
-      .loading-icon {
-        animation: spin 1s linear infinite;
-        stroke: var(--red-color);
+      .alert-actions {
+        display: flex;
+        justify-content: flex-end;
+        
+        .btn-delete {
+          padding: 6px 12px;
+          font-size: 14px;
+          background-color: #C7424F;
+          border: 2px solid var(--main-color);
+          color: var(--main-color);
+          border-radius: 0;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 2px 2px 0 var(--main-color);
+          
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 3px 3px 0 var(--main-color);
+            background-color: #E06B51;
+          }
+          
+          &:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 1px 1px 0 var(--main-color);
+            background-color: #942C4B;
+          }
+          
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+      }
+      
+      // Different styling per alert type
+      &.total_limit {
+        border-left: 6px solid var(--red-color);
+      }
+      
+      &.category_limit {
+        border-left: 6px solid var(--yellow-color);
+      }
+      
+      &.income_vs_expense {
+        border-left: 6px solid var(--green-color);
+      }
+      
+      // Alert is being deleted
+      &.deleting {
+        opacity: 0.5;
+        pointer-events: none;
       }
     }
   }
   
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 0;
-  }
-  
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(90, 103, 216, 0.1);
-    border-radius: 50%;
-    border-top-color: var(--input-focus);
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 16px;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .empty-state {
-    text-align: center;
-    padding: 40px 0;
+  .settings-link {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    background-color: #89D9D9;
+    color: var(--main-color);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0 var(--main-color);
+    font-family: 'Courier New', monospace;
     
-    p {
-      font-size: 16px;
-      color: var(--font-color);
-      margin-bottom: 8px;
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0 var(--main-color);
+      background-color: #72B6CF;
     }
     
-    .subtext {
-      font-size: 14px;
-      color: var(--font-color-sub);
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 1px 1px 0 var(--main-color);
     }
   }
   
   .alerts-info-card {
     background-color: var(--bg-color);
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px 0 var(--main-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--main-color);
+      border-bottom: 2px solid var(--main-color);
+      padding-bottom: 8px;
+    }
     
     p {
       color: var(--font-color-sub);
       margin-bottom: 16px;
       line-height: 1.6;
-    }
-    
-    .settings-link {
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: 5px;
-      background-color: var(--input-focus);
-      color: white;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      }
-    }
-  }
-  
-  @media (max-width: 768px) {
-    padding: 10px;
-    
-    .action-buttons {
-      flex-direction: column;
-      
-      .action-btn {
-        width: 100%;
-      }
     }
   }
 `;

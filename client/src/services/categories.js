@@ -1,10 +1,6 @@
 import axios from 'axios';
 import { API_URL } from './config';
-
-// Thiết lập interceptor để thêm token vào mọi request
-const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+import { getAuthToken } from '../utils/auth';
 
 // Lấy tất cả danh mục
 export const getAllCategories = async () => {

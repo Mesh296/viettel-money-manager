@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCurrentUserTransactions, deleteTransaction, searchTransactions } from '../services/transactions';
+import { getCurrentUserTransactions, deleteTransaction, searchTransactions } from '../../services/transactions';
 import { toast } from 'react-toastify';
 import TransactionFilter from './TransactionFilter';
 import TransactionEdit from './TransactionEdit';

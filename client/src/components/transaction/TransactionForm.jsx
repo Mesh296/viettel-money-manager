@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getAllCategories } from '../services/categories';
-import { createTransaction, updateTransaction } from '../services/transactions';
+import { getAllCategories } from '../../services/categories';
+import { createTransaction, updateTransaction } from '../../services/transactions';
 import { toast } from 'react-toastify';
 import styled from 'styled-components';
 

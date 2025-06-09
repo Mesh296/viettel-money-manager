@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaChartPie, FaExchangeAlt, FaWallet, FaBell, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import styled from 'styled-components';
+import PixelButton from './PixelButton';
 
 const Sidebar = () => {
   const { isAuthenticated, logout, user } = useAuth();
@@ -22,7 +22,7 @@ const Sidebar = () => {
           <>
             <div className="user-profile">
               <div className="avatar-container">
-                <FaUser className="avatar-icon" />
+                <i className="hn hn-github"></i>
               </div>
               <div className="user-info">
                 <p className="user-name">{user?.name || 'User'}</p>
@@ -38,7 +38,7 @@ const Sidebar = () => {
                     to="/dashboard" 
                     className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
                   >
-                    <FaChartPie className="nav-icon" />
+                    <i className="hn hn-chart-line-solid nav-icon"></i>
                     <span>Dashboard</span>
                   </Link>
                 </li>
@@ -47,7 +47,7 @@ const Sidebar = () => {
                     to="/transactions" 
                     className={`nav-link ${isActive('/transactions') ? 'active' : ''}`}
                   >
-                    <FaExchangeAlt className="nav-icon" />
+                    <i className="hn hn-credit-card nav-icon"></i>
                     <span>Giao dịch</span>
                   </Link>
                 </li>
@@ -57,7 +57,7 @@ const Sidebar = () => {
                     to="/budgets" 
                     className={`nav-link ${isActive('/budgets') ? 'active' : ''}`}
                   >
-                    <FaWallet className="nav-icon" />
+                    <i className="hn hn-wallet-solid nav-icon"></i>
                     <span>Ngân sách</span>
                   </Link>
                 </li>
@@ -66,7 +66,7 @@ const Sidebar = () => {
                     to="/alerts" 
                     className={`nav-link ${isActive('/alerts') ? 'active' : ''}`}
                   >
-                    <FaBell className="nav-icon" />
+                    <i className="hn hn-bell-solid nav-icon"></i>
                     <span>Cảnh báo</span>
                   </Link>
                 </li>
@@ -74,25 +74,21 @@ const Sidebar = () => {
             </nav>
             
             <div className="logout-container">
-              <button 
-                onClick={logout}
-                className="logout-button"
-              >
-                <FaSignOutAlt className="logout-icon" />
-                <span>Đăng xuất</span>
-              </button>
+              <PixelButton onClick={logout} className="logout-button">
+                Đăng xuất
+              </PixelButton>
             </div>
           </>
         )}
         
         {!isAuthenticated && (
           <div className="auth-links">
-            <Link to="/login" className="auth-button login-button">
+            <PixelButton to="/login">
               Đăng nhập
-            </Link>
-            <Link to="/register" className="auth-button register-button">
+            </PixelButton>
+            <PixelButton to="/register">
               Đăng ký
-            </Link>
+            </PixelButton>
           </div>
         )}
       </div>
@@ -101,13 +97,14 @@ const Sidebar = () => {
 };
 
 const StyledSidebar = styled.aside`
-  background-color: #ffffff;
+  background-color: #FFF5E9;
   height: 100%;
-  border-right: 1px solid #f0f0f0;
+  border-right: 2px solid #000000;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   padding: 0;
+  image-rendering: pixelated;
   
   .sidebar-container {
     display: flex;
@@ -119,41 +116,39 @@ const StyledSidebar = styled.aside`
   .logo-container {
     margin-bottom: 28px;
     padding-bottom: 20px;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 2px solid #000000;
   }
   
   .logo {
     font-size: 24px;
     font-weight: 700;
-    color: #5A67D8;
+    color: #000000;
     text-decoration: none;
     letter-spacing: -0.5px;
     display: block;
+    font-family: 'Courier New', monospace;
   }
   
   .user-profile {
     display: flex;
     align-items: center;
     padding: 16px;
-    background: linear-gradient(135deg, #EBF4FF 0%, #E6FFFA 100%);
-    border-radius: 12px;
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 0;
     margin-bottom: 24px;
   }
   
   .avatar-container {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    background: #5A67D8;
+    border: 2px solid #000000;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 12px;
-    color: white;
-  }
-  
-  .avatar-icon {
-    font-size: 18px;
+    color: #000000;
   }
   
   .user-info {
@@ -163,20 +158,22 @@ const StyledSidebar = styled.aside`
   
   .user-name {
     font-weight: 600;
-    color: #2D3748;
+    color: #000000;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Courier New', monospace;
   }
   
   .user-email {
     font-size: 12px;
-    color: #718096;
+    color: #000000;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Courier New', monospace;
   }
   
   .navigation {
@@ -187,11 +184,12 @@ const StyledSidebar = styled.aside`
     font-size: 14px;
     font-weight: 600;
     text-transform: uppercase;
-    color: #718096;
+    color: #000000;
     margin-bottom: 16px;
     margin-top: 0;
     letter-spacing: 1px;
     padding-left: 8px;
+    font-family: 'Courier New', monospace;
   }
   
   .nav-list {
@@ -208,31 +206,23 @@ const StyledSidebar = styled.aside`
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 0;
     text-decoration: none;
-    color: #4A5568;
+    color: #000000;
     font-weight: 500;
-    border: 2px solid transparent;
+    border: 2px solid #000000;
     transition: all 0.2s ease;
+    font-family: 'Courier New', monospace;
+    background-color: #ffffff;
     
     &:hover {
-      background-color: #F7FAFC;
-      color: #5A67D8;
-      border-color: #E2E8F0;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      background-color: #f0f0f0;
+      color: #000000;
     }
     
     &.active {
-      background-color: #5A67D8;
+      background-color: #000000;
       color: white;
-      border-color: #4C51BF;
-      box-shadow: 0 4px 10px rgba(90, 103, 216, 0.4);
-      
-      &:hover {
-        background-color: #4C51BF;
-        transform: translateY(-2px);
-      }
     }
   }
   
@@ -242,74 +232,29 @@ const StyledSidebar = styled.aside`
   }
   
   .logout-container {
+    display: flex;
+    justify-content: center;
     margin-top: 24px;
     padding-top: 16px;
-    border-top: 1px solid #f5f5f5;
+    border-top: 2px solid #000000;
   }
   
   .logout-button {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    cursor: pointer;
-    outline: none;
-    border: 0;
-    vertical-align: middle;
-    text-decoration: none;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    color: #C53030;
-    text-transform: uppercase;
-    padding: 12px 16px;
-    background: #FFF0F0;
-    border: 2px solid #E53E3E;
-    border-radius: 8px;
-    transform-style: preserve-3d;
-    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
-                background 150ms cubic-bezier(0, 0, 0.58, 1);
-    
-    .logout-icon {
-      margin-right: 8px;
-    }
-    
-    &::before {
-      position: absolute;
-      content: '';
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #FED7D7;
-      border-radius: inherit;
-      box-shadow: 0 0 0 2px #E53E3E, 0 0.5em 0 0 #FFF5F5;
-      transform: translate3d(0, 0.6em, -1em);
-      transition: transform 150ms cubic-bezier(0, 0, 0.58, 1),
-                  box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
-    }
+    background-color: #C7424F !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    box-shadow: 4px 4px 0 #000000 !important;
     
     &:hover {
-      background: #FFF5F5;
-      transform: translate(0, 0.25em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #E53E3E, 0 0.4em 0 0 #FFF5F5;
-        transform: translate3d(0, 0.45em, -1em);
-      }
+      background-color: #E06B51 !important;
+      transform: translate(-2px, -2px) !important;
+      box-shadow: 6px 6px 0 #000000 !important;
     }
     
     &:active {
-      background: #FFF5F5;
-      transform: translate(0em, 0.6em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #E53E3E, 0 0 #FFF5F5;
-        transform: translate3d(0, 0, -1em);
-      }
+      transform: translate(2px, 2px) !important;
+      box-shadow: 2px 2px 0 #000000 !important;
+      background-color: #942C4B !important;
     }
   }
   
@@ -318,102 +263,6 @@ const StyledSidebar = styled.aside`
     flex-direction: column;
     gap: 16px;
     margin-top: 24px;
-  }
-  
-  .auth-button {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-    outline: none;
-    vertical-align: middle;
-    text-decoration: none;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    text-align: center;
-    padding: 12px 16px;
-    border-radius: 8px;
-    transform-style: preserve-3d;
-    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
-                background 150ms cubic-bezier(0, 0, 0.58, 1);
-                
-    &::before {
-      position: absolute;
-      content: '';
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: inherit;
-      transition: transform 150ms cubic-bezier(0, 0, 0.58, 1),
-                  box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
-    }
-  }
-  
-  .login-button {
-    color: #5A67D8;
-    background: #EBF4FF;
-    border: 2px solid #5A67D8;
-    
-    &::before {
-      background: #E6FFFA;
-      box-shadow: 0 0 0 2px #5A67D8, 0 0.5em 0 0 #EBF4FF;
-      transform: translate3d(0, 0.6em, -1em);
-    }
-    
-    &:hover {
-      background: #EDF2F7;
-      transform: translate(0, 0.25em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #5A67D8, 0 0.4em 0 0 #EBF4FF;
-        transform: translate3d(0, 0.45em, -1em);
-      }
-    }
-    
-    &:active {
-      background: #EDF2F7;
-      transform: translate(0em, 0.6em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #5A67D8, 0 0 #EBF4FF;
-        transform: translate3d(0, 0, -1em);
-      }
-    }
-  }
-  
-  .register-button {
-    color: white;
-    background: #5A67D8;
-    border: 2px solid #4C51BF;
-    
-    &::before {
-      background: #4C51BF;
-      box-shadow: 0 0 0 2px #4C51BF, 0 0.5em 0 0 #C3DAFE;
-      transform: translate3d(0, 0.6em, -1em);
-    }
-    
-    &:hover {
-      background: #667EEA;
-      transform: translate(0, 0.25em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #4C51BF, 0 0.4em 0 0 #C3DAFE;
-        transform: translate3d(0, 0.45em, -1em);
-      }
-    }
-    
-    &:active {
-      background: #667EEA;
-      transform: translate(0em, 0.6em);
-      
-      &::before {
-        box-shadow: 0 0 0 2px #4C51BF, 0 0 #C3DAFE;
-        transform: translate3d(0, 0, -1em);
-      }
-    }
   }
 `;
 

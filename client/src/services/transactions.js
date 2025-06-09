@@ -3,11 +3,7 @@ import { API_URL } from './config';
 import { getSummaryStatistics, getCategoryExpenses } from './statistics';
 import { generateAlerts } from './alerts';
 import { getCurrentBudget, getCategoryBudgets, getBudgetByMonth, getCategoryBudgetsByMonth } from './budgets';
-
-// Thiết lập interceptor để thêm token vào mọi request
-const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+import { getAuthToken } from '../utils/auth';
 
 // Tạo giao dịch mới
 export const createTransaction = async (transactionData) => {

@@ -1,10 +1,6 @@
 import axios from 'axios';
 import { API_URL } from './config';
-
-// Thiết lập interceptor để thêm token vào mọi request
-const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+import { getAuthToken } from '../utils/auth';
 
 // Lấy thống kê tổng quan (tổng thu, tổng chi, số dư)
 export const getSummaryStatistics = async (month = null, year = null) => {

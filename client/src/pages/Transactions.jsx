@@ -89,19 +89,21 @@ const Transactions = () => {
 };
 
 const StyledTransactions = styled.div`
-  --input-focus: #5A67D8;
-  --font-color: #2D3748;
-  --font-color-sub: #4A5568;
+  --input-focus: #4E6679;
+  --font-color: #000000;
+  --font-color-sub: #464969;
   --bg-color: #FFF;
   --bg-color-alt: #FFF5E9;
-  --main-color: #2D3748;
-  --green-color: #48BB78;
-  --red-color: #F56565;
-  --yellow-color: #F6E05E;
+  --main-color: #000000;
+  --green-color: #80B878;
+  --red-color: #C7424F;
+  --yellow-color: #F2A561;
   
   padding: 20px;
   background-color: var(--bg-color-alt);
   min-height: 100%;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
   
   .container {
     max-width: 1200px;
@@ -113,6 +115,8 @@ const StyledTransactions = styled.div`
     font-weight: 900;
     color: var(--main-color);
     margin-bottom: 24px;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 12px;
   }
   
   .section {
@@ -121,9 +125,9 @@ const StyledTransactions = styled.div`
   
   .transaction-card {
     background: var(--bg-color);
-    border-radius: 8px;
+    border-radius: 0;
     border: 2px solid var(--main-color);
-    box-shadow: 4px 4px var(--main-color);
+    box-shadow: 4px 4px 0 var(--main-color);
     padding: 20px;
     margin-bottom: 20px;
     transition: transform 0.2s;
@@ -136,6 +140,8 @@ const StyledTransactions = styled.div`
       color: var(--main-color);
       margin-bottom: 16px;
       margin-top: 0;
+      border-bottom: 2px solid var(--main-color);
+      padding-bottom: 8px;
     }
   }
   
@@ -172,46 +178,37 @@ const StyledTransactions = styled.div`
   
   .filter-btn {
     padding: 8px 16px;
-    border-radius: 5px;
+    border-radius: 0;
     border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
+    background-color: #fff;
     font-weight: 600;
-    color: var(--font-color);
+    color: var(--main-color);
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 2px 2px 0 var(--main-color);
+    font-family: 'Courier New', monospace;
     
     &:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0 var(--main-color);
     }
     
     &.active {
-      background-color: var(--input-focus);
-      color: white;
+      background-color: #89D9D9;
+      color: var(--main-color);
+      border-color: var(--main-color);
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0 var(--main-color);
     }
     
     &.income.active {
       background-color: var(--green-color);
-      color: white;
+      color: var(--main-color);
     }
     
     &.expense.active {
       background-color: var(--red-color);
-      color: white;
-    }
-    
-    @media (max-width: 600px) {
-      flex: 1;
-      padding: 8px 10px;
-      font-size: 14px;
-      text-align: center;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    padding: 12px;
-    
-    .transaction-card {
-      padding: 16px;
+      color: var(--main-color);
     }
   }
 `;

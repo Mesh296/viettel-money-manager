@@ -173,7 +173,7 @@ const RecentTransactions = () => {
         </tbody>
       </table>
       <div className="mt-3 text-right">
-        <Link to="/transactions" className="text-blue-600 hover:text-blue-800 text-xs font-medium">
+        <Link to="/transactions" className="text-[#5C8BA8] hover:text-[#4E6679] text-xs">
           Xem tất cả giao dịch →
         </Link>
       </div>

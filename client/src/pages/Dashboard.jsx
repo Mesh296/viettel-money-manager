@@ -399,8 +399,8 @@ const StyledDashboard = styled.div`
     }
     
     &.balance {
-      border-left: 4px solid var(--input-focus);
-      background-color: rgba(90, 103, 216, 0.1);
+      border-left: 4px solid rgba(114, 182, 207);
+      background-color: rgba(114, 182, 207, 0.1);
     }
   }
   
@@ -413,7 +413,7 @@ const StyledDashboard = styled.div`
   }
   
   .balance h3 {
-    color: var(--input-focus);
+    color: rgba(114, 182, 207);
   }
   
   .amount {
@@ -430,7 +430,7 @@ const StyledDashboard = styled.div`
   }
   
   .balance-positive {
-    color: var(--green-color);
+    color: rgba(114, 182, 207);
   }
   
   .balance-negative {

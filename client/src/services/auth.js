@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -37,7 +38,7 @@ export const refreshToken = async (refreshToken) => {
 
 export const getUserInfo = async () => {
   try {
-    const token = localStorage.getItem('auth_token');
+    const token = getAuthToken();
     
     if (!token) {
       throw new Error('Token không tồn tại');
