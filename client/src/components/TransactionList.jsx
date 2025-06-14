@@ -224,12 +224,7 @@ const TransactionList = ({ refreshTrigger, filter = 'all', onTransactionChange }
           <span>
             <strong>Đang lọc:</strong> {Object.keys(currentFilters).length} điều kiện được áp dụng
           </span>
-          <button
-            onClick={() => handleFilterChange({})}
-            className="clear-filter-button"
-          >
-            Xóa bộ lọc
-          </button>
+
         </div>
       );
     }

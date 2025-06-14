@@ -25,8 +25,8 @@ function formatTransactions(transactions, limit = 5) {
     const categoryName = t.category?.name || (t.category ? t.category.name : 'Không có danh mục');
     const type = t.type === 'income' ? 'Thu nhập' : 'Chi tiêu';
     const note = t.note ? ` (${t.note})` : '';
-    const id = t.transactionId || t.id; // Handle both id formats
-    return `${idx + 1}. ${date}: ${type} ${amount} - ${categoryName}${note} [ID: ${id}]`;
+    // const id = t.transactionId || t.id; // Handle both id formats
+    return `${idx + 1}. ${date}: ${type} ${amount} - ${categoryName}${note}`;
   }).join('\n');
   
   return formatted
