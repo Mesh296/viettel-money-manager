@@ -750,7 +750,7 @@ const Budgets = () => {
             </div>
             {/* Right: budget summary */}
             <div className="budget-right-col">
-              {monthlyBudget && monthlyBudget.amount > 0 && (
+              {(
                 <div className="budget-summary">
                   <h3 className="card-title">Thông tin ngân sách</h3>
                   <div className="summary-row">
@@ -773,7 +773,7 @@ const Budgets = () => {
                       ></div>
                     </div>
                     <div className="progress-label">
-                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}% sử dụng
+                      Bạn đã chi tiêu <span className="">{calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%</span> ngân sách tháng này
                     </div>
                   </div>
                 </div>
@@ -1124,7 +1124,7 @@ const StyledBudgets = styled.div`
   }
   .progress-label {
     text-align: right;
-    font-size: 13px;
+    font-size: 1rem;
     color: #5A67D8;
     font-family: 'Press Start 2P', 'Courier New', monospace;
     font-weight: 700;

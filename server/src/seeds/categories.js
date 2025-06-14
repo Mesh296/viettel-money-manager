@@ -22,9 +22,7 @@ const categories = [
     {
         "name": "Refund"
     },
-    {
-        "name": "Other Income"
-    },
+
     {
         "name": "Food & Dining"
     },
@@ -52,14 +50,18 @@ const categories = [
     {
         "name": "Pet"
     },
-    {
-        "name": "Other Expenses"
-    },
+
     {
         "name": "Gym"
     },
     {
         "name": "Coffee & Snacks"
+    },
+    {
+        "name": "Other Expenses"
+    },
+    {
+        "name": "Other Income"
     }
 ];
 

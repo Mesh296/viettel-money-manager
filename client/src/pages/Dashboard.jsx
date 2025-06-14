@@ -152,7 +152,12 @@ const Dashboard = () => {
             {/* Cột bên trái */}
             <div className="dashboard-column main-column">
               <div className="section">
-                <h2>Thống kê {statistics?.monthName || ''} năm {statistics?.year}</h2>
+                <div className="section-header">
+                  <h2>Thống kê {statistics?.monthName || ''} năm {statistics?.year}</h2>
+                  <div className="info-icon" data-tooltip="Tổng hợp thu nhập, chi tiêu và số dư trong tháng">
+                    <i className="hn hn-info-circle"></i>
+                  </div>
+                </div>
                 
                 {loading ? (
                   <div className="loading-container">
@@ -199,7 +204,12 @@ const Dashboard = () => {
               
               {/* Biểu đồ thu chi theo tháng */}
               <div className="section">
-                <h2>Biểu đồ thu chi theo tháng</h2>
+                <div className="section-header">
+                  <h2>Biểu đồ thu chi theo tháng</h2>
+                  <div className="info-icon" data-tooltip="Biểu thị thu nhập và chi tiêu theo từng tháng trong năm">
+                    <i className="hn hn-info-circle"></i>
+                  </div>
+                </div>
                 <div className="dashboard-card chart-card">
                   <MonthlyChart year={selectedYear} selectedMonth={selectedMonth} />
                 </div>
@@ -207,7 +217,12 @@ const Dashboard = () => {
               
               {/* Biểu đồ chi tiêu theo danh mục */}
               <div className="section">
-                <h2>Chi tiêu theo danh mục</h2>
+                <div className="section-header">
+                  <h2>Chi tiêu theo danh mục</h2>
+                  <div className="info-icon" data-tooltip="Hiển thị tỷ lệ phần trăm của từng danh mục chi tiêu trong tổng chi tiêu của tháng">
+                    <i className="hn hn-info-circle"></i>
+                  </div>
+                </div>
                 <div className="dashboard-card chart-card">
                   <CategorySpendingChart 
                     month={selectedMonth} 
@@ -218,7 +233,12 @@ const Dashboard = () => {
               
               {/* Biểu đồ xu hướng chi tiêu theo danh mục */}
               <div className="section">
-                <h2>Xu hướng chi tiêu theo danh mục</h2>
+                <div className="section-header">
+                  <h2>Xu hướng chi tiêu theo danh mục</h2>
+                  <div className="info-icon" data-tooltip="Theo dõi xu hướng chi tiêu của từng danh mục qua các tháng trong năm">
+                    <i className="hn hn-info-circle"></i>
+                  </div>
+                </div>
                 <div className="dashboard-card chart-card">
                   <CategoryTrendChart 
                     year={selectedYear} 
@@ -232,7 +252,12 @@ const Dashboard = () => {
             <div className="dashboard-column side-column">
               {/* Giao dịch gần đây */}
               <div className="section">
-                <h2>Giao dịch gần đây</h2>
+                <div className="section-header">
+                  <h2>Giao dịch gần đây</h2>
+                  <div className="info-icon" data-tooltip="Hiển thị các giao dịch mới nhất của bạn">
+                    <i className="hn hn-info-circle"></i>
+                  </div>
+                </div>
                 <div className="dashboard-card recent-transactions-card">
                   <RecentTransactions />
                 </div>
@@ -315,6 +340,42 @@ const StyledDashboard = styled.div`
       color: var(--main-color);
       margin-bottom: 12px;
       text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      
+      h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--main-color);
+        margin: 0;
+        text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+      }
+      
+      .info-icon {
+        cursor: pointer;
+        margin-left: 10px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          font-size: 18px;
+          color: var(--main-color);
+        }
+        
+        &:hover {
+          i {
+            color: var(--input-focus);
+          }
+        }
+      }
     }
   }
   
@@ -545,4 +606,4 @@ const StyledDashboard = styled.div`
   }
 `;
 
-export default Dashboard; 
+export default Dashboard;

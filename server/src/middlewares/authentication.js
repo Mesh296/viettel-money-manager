@@ -2,10 +2,10 @@ const jwt = require('jsonwebtoken')
 const dotenv = require('dotenv').config()
 const userService = require('../services/users')
 
-if (!process.env.SECRET_KEY) {
-    throw new Error('Missing SECRET_KEY in environment variables');
-}
 const SECRET_KEY = process.env.SECRET_KEY;
+if (!SECRET_KEY) {
+    throw new Error('Missing JWT_SECRET in environment variables');
+}
 
 const authenticate = async(req, res, next) => {
     try {
