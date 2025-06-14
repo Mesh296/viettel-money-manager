@@ -221,6 +221,10 @@ const CategoryTrendChart = ({ year = null }) => {
             return `${label}: ${formattedValue}`;
           }
         }
+      },
+      // Ensure data labels are disabled
+      datalabels: {
+        display: false
       }
     },
     scales: {
@@ -261,6 +265,15 @@ const CategoryTrendChart = ({ year = null }) => {
         },
         grid: {
           display: false
+        },
+        title: {
+          display: true,
+          text: 'Tháng',
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#2D3748'
         }
       }
     },

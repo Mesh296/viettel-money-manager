@@ -688,75 +688,41 @@ const Budgets = () => {
       <StyledBudgets>
         <div className="container">
           <h1 className="page-title">Quản lý ngân sách {formatMonthDisplay(selectedMonth, selectedYear)}</h1>
-          
-          {/* Top cards row */}
-          <div className="cards-row">
-            {/* Month/Year Selection */}
-            <div className="budget-card month-selection-card">
-              <h2>Chọn tháng</h2>
-              
-              <div className="form-row">
-                <div className="input-group">
-                  <label className="input-label" htmlFor="month-select">Tháng:</label>
-                  <select 
+          {/* Top section: 2 columns */}
+          <div className="budget-top-row">
+            {/* Left: chọn tháng + cập nhật ngân sách */}
+            <div className="budget-left-col">
+              <div className="month-selection-card budget-card">
+                <h3 className="card-title">Chọn thời gian</h3>
+                <div className="select-group">
+                  <label className="input-label" htmlFor="month-select">Chọn tháng:</label>
+                  <select
                     id="month-select"
                     className="select-input"
                     value={selectedMonth}
-                    onChange={(e) => {
-                      const newMonth = Number(e.target.value);
-                      setSelectedMonth(newMonth);
-                      setIsCurrentMonth(checkIsCurrentMonth(newMonth, selectedYear));
-                    }}
+                    onChange={e => setSelectedMonth(Number(e.target.value))}
                   >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                      <option key={month} value={month}>Tháng {month}</option>
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
                     ))}
                   </select>
                 </div>
-                
-                <div className="input-group">
-                  <label className="input-label" htmlFor="year-select">Năm:</label>
-                  <select 
+                <div className="select-group">
+                  <label className="input-label" htmlFor="year-select">Chọn năm:</label>
+                  <select
                     id="year-select"
                     className="select-input"
                     value={selectedYear}
-                    onChange={(e) => {
-                      const newYear = Number(e.target.value);
-                      setSelectedYear(newYear);
-                      setIsCurrentMonth(checkIsCurrentMonth(selectedMonth, newYear));
-                    }}
+                    onChange={e => setSelectedYear(Number(e.target.value))}
                   >
-                    {years.map(year => (
-                      <option key={year} value={year}>{year}</option>
+                    {years.map(y => (
+                      <option key={y} value={y}>{y}</option>
                     ))}
                   </select>
                 </div>
-                
-                <button 
-                  className="action-btn"
-                  onClick={() => {
-                    if (!isCurrentMonth) {
-                      setSelectedMonth(currentDate.getMonth() + 1);
-                      setSelectedYear(currentDate.getFullYear());
-                      setIsCurrentMonth(true);
-                    }
-                  }}
-                  disabled={isCurrentMonth}
-                >
-                  Tháng hiện tại
-                </button>
-                
-                {loading && (
-                  <div className="loading-spinner-small"></div>
-                )}
               </div>
-            </div>
-          
-            {/* Monthly Budget Form */}
-            <div className="budget-card total-budget-card">
-              <h2>Ngân sách tổng</h2>
-              
-              <form onSubmit={handleMonthlyBudgetSubmit}>
+              <form onSubmit={handleMonthlyBudgetSubmit} className="budget-card">
+                <h3 className="card-title">Cập nhật ngân sách</h3>
                 <div className="form-row">
                   <div className="input-group">
                     <label className="input-label" htmlFor="budget-amount">
@@ -772,7 +738,6 @@ const Budgets = () => {
                       required
                     />
                   </div>
-                  
                   <button 
                     type="submit"
                     className="submit-btn"
@@ -781,40 +746,38 @@ const Budgets = () => {
                     {loading ? 'Đang xử lý...' : 'Cập nhật'}
                   </button>
                 </div>
-                
-                {monthlyBudget && monthlyBudget.amount > 0 && (
-                  <div className="budget-summary">
-                    <div className="summary-row">
-                      <span>Ngân sách hiện tại:</span>
-                      <span className="amount">{formatCurrency(monthlyBudget.amount)}</span>
+              </form>
+            </div>
+            {/* Right: budget summary */}
+            <div className="budget-right-col">
+              {monthlyBudget && monthlyBudget.amount > 0 && (
+                <div className="budget-summary">
+                  <h3 className="card-title">Thông tin ngân sách</h3>
+                  <div className="summary-row">
+                    <span>Ngân sách hiện tại:</span>
+                    <span className="amount">{formatCurrency(monthlyBudget.amount)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Đã chi tiêu:</span>
+                    <span className="amount expense">{formatCurrency(monthlyBudget.spent)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Còn lại:</span>
+                    <span className={`amount ${monthlyBudget.amount - monthlyBudget.spent >= 0 ? 'remaining' : 'over-budget'}`}>{formatCurrency(monthlyBudget.amount - monthlyBudget.spent)}</span>
+                  </div>
+                  <div className="progress-container">
+                    <div className="progress-bar">
+                      <div
+                        className={`progress ${monthlyBudget.spent / monthlyBudget.amount > 0.9 ? 'danger' : monthlyBudget.spent / monthlyBudget.amount > 0.7 ? 'warning' : 'safe'}`}
+                        style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
+                      ></div>
                     </div>
-                    
-                    <div className="summary-row">
-                      <span>Đã chi tiêu:</span>
-                      <span className="amount expense">{formatCurrency(monthlyBudget.spent)}</span>
-                    </div>
-                    
-                    <div className="summary-row">
-                      <span>Còn lại:</span>
-                      <span className={`amount ${monthlyBudget.amount - monthlyBudget.spent >= 0 ? 'remaining' : 'over-budget'}`}>
-                        {formatCurrency(monthlyBudget.amount - monthlyBudget.spent)}
-                      </span>
-                    </div>
-                    
-                    <div className="progress-container">
-                      <div className="progress-bar">
-                        <div
-                          className={`progress ${monthlyBudget.spent / monthlyBudget.amount > 0.9 ? 'danger' : monthlyBudget.spent / monthlyBudget.amount > 0.7 ? 'warning' : 'safe'}`}
-                          style={{ width: `${calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}%` }}
-                        ></div>
-                      </div>
-                      <div className="progress-label">
-                        {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}% sử dụng
-                      </div>
+                    <div className="progress-label">
+                      {calculatePercentage(monthlyBudget.spent, monthlyBudget.amount)}% sử dụng
                     </div>
                   </div>
-                )}
-              </form>
+                </div>
+              )}
             </div>
           </div>
           
@@ -997,196 +960,181 @@ const StyledBudgets = styled.div`
     padding-bottom: 12px;
   }
   
-  .cards-row {
+  .budget-top-row {
     display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    
-    @media (max-width: 992px) {
-      flex-direction: column;
-    }
-  }
-  
-  .month-selection-card {
-    flex: 1;
-  }
-  
-  .total-budget-card {
-    flex: 1.5;
-  }
-  
-  .section {
-    margin-bottom: 30px;
-    
-    h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--main-color);
-      margin-bottom: 16px;
-    }
-  }
-  
-  .budget-card {
-    background: var(--bg-color);
-    border-radius: 0;
+    gap: 0;
+    margin-bottom: 32px;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
     border: 2px solid var(--main-color);
     box-shadow: 4px 4px 0 var(--main-color);
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: transform 0.2s;
-    image-rendering: pixelated;
-    
-    &:hover {
-      transform: translateY(-2px);
-    }
-    
-    h2, h3 {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--main-color);
-      margin-bottom: 16px;
-      border-bottom: 2px solid var(--main-color);
-      padding-bottom: 8px;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    @media (max-width: 900px) {
+      flex-direction: column;
+      gap: 0;
+      border: none;
+      box-shadow: none;
+      overflow: visible;
     }
   }
   
-  .form-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  .input-group {
-    flex: 1;
+  .budget-left-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+    min-width: 320px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
+    justify-content: stretch;
+    @media (max-width: 900px) {
+      border: 2px solid var(--main-color);
+      box-shadow: 4px 4px 0 var(--main-color);
+    }
   }
-  
-  .input-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--font-color);
-  }
-  
-  .text-input, .select-input {
-    padding: 8px 12px;
+  .budget-left-col .budget-card {
+    margin-bottom: 0;
+    border: none;
     border-radius: 0;
-    border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
-    box-shadow: 2px 2px 0 var(--main-color);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--font-color);
-    outline: none;
-    font-family: 'Courier New', monospace;
-    
-    &:focus {
-      border-color: var(--input-focus);
-    }
+    box-shadow: none;
+    flex: 1 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
-  
-  .submit-btn, .action-btn {
-    padding: 8px 16px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    background-color: #89D9D9;
-    color: var(--main-color);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 3px 3px 0 var(--main-color);
-    font-family: 'Courier New', monospace;
-    
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 5px 5px 0 var(--main-color);
-      background-color: #72B6CF;
-    }
-    
-    &:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 2px 2px 0 var(--main-color);
-      background-color: #5C8BA8;
-    }
-    
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-  
-  .budget-summary {
-    margin-top: 20px;
-    padding-top: 16px;
+  .budget-left-col .budget-card + .budget-card {
+    margin-top: 0;
     border-top: 2px solid var(--main-color);
   }
-  
+  .budget-right-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+    border-left: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    @media (max-width: 900px) {
+      border: 2px solid var(--main-color);
+      box-shadow: 4px 4px 0 var(--main-color);
+      margin-top: 16px;
+    }
+  }
+  .budget-right-col .budget-summary {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 20px;
+    background-color: var(--bg-color);
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--main-color);
+    margin-bottom: 16px;
+   
+    padding-bottom: 8px;
+    text-align: center;
+    width: 100%;
+  }
+  .select-group {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .summary-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-weight: 600;
-    
-    .amount {
-      &.expense {
-        color: var(--red-color);
-      }
-      
-      &.remaining {
-        color: var(--green-color);
-      }
-      
-      &.over-budget {
-        color: var(--red-color);
-      }
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 8px 12px;
+    border-bottom: 1px dashed #E2E8F0;
+    background: #F7FAFC;
+    border-radius: 4px;
+    width: 100%;
+  }
+  .summary-row:first-of-type {
+    background: #EBF8FF;
+    border: 1px solid #4299E1;
+  }
+  .summary-row:last-child {
+    border-bottom: none;
+    margin-bottom: 16px;
+  }
+  .summary-row .amount {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    &.expense {
+      color: #F56565;
+    }
+    &.remaining {
+      color: #48BB78;
+    }
+    &.over-budget {
+      color: #C7424F;
     }
   }
-  
+  .summary-row:first-of-type .amount {
+    font-size: 24px;
+    color: #3182CE;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+  }
   .progress-container {
-    margin-top: 16px;
+    margin-top: 10px;
+    margin-bottom: 0;
+    width: 100%;
   }
-  
   .progress-bar {
-    height: 8px;
-    background-color: #E2E8F0;
-    border-radius: 0;
-    border: 1px solid var(--main-color);
+    height: 12px;
+    border: 2px solid #5A67D8;
+    background: #E2E8F0;
+    box-shadow: 2px 2px 0 #5A67D8;
+    border-radius: 2px;
     overflow: hidden;
-    margin-bottom: 6px;
-    
-    .progress {
-      height: 100%;
-      border-radius: 0;
-      
-      &.safe {
-        background-color: var(--green-color);
-      }
-      
-      &.warning {
-        background-color: var(--yellow-color);
-      }
-      
-      &.danger {
-        background-color: var(--red-color);
-      }
+    margin-bottom: 4px;
+  }
+  .progress-bar .progress {
+    height: 100%;
+    border-radius: 0;
+    transition: width 0.4s cubic-bezier(.4,2,.6,1);
+    &.safe {
+      background: #48BB78;
+    }
+    &.warning {
+      background: #F6E05E;
+    }
+    &.danger {
+      background: #F56565;
     }
   }
-  
   .progress-label {
     text-align: right;
-    font-size: 12px;
-    color: var(--font-color);
-  }
-  
-  .progress-text {
-    font-size: 12px;
-    color: var(--font-color);
-    margin-left: 6px;
+    font-size: 13px;
+    color: #5A67D8;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-weight: 700;
+    margin-top: 0;
   }
   
   .category-budgets-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
     margin-top: 24px;
     padding-top: 16px;
     border-top: 2px solid var(--main-color);
@@ -1360,6 +1308,115 @@ const StyledBudgets = styled.div`
     
     .select-input {
       width: 100%;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .budget-left-col, .budget-right-col {
+      max-width: 100%;
+      min-width: 0;
+      flex: 1 1 100%;
+    }
+  }
+  
+  .month-selection-card {
+    flex: 1;
+  }
+  
+  .total-budget-card {
+    flex: 1.5;
+  }
+  
+  .section {
+    margin-bottom: 30px;
+    
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--main-color);
+      margin-bottom: 16px;
+    }
+  }
+  
+  .budget-card {
+    background: var(--bg-color);
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px 0 var(--main-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+    image-rendering: pixelated;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+  
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .input-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--font-color);
+  }
+  
+  .text-input, .select-input {
+    padding: 8px 12px;
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 2px 2px 0 var(--main-color);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--font-color);
+    outline: none;
+    font-family: 'Courier New', monospace;
+    
+    &:focus {
+      border-color: var(--input-focus);
+    }
+  }
+  
+  .submit-btn, .action-btn {
+    padding: 8px 16px;
+    border-radius: 0;
+    border: 2px solid var(--main-color);
+    background-color: #89D9D9;
+    color: var(--main-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 3px 3px 0 var(--main-color);
+    font-family: 'Courier New', monospace;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 5px 5px 0 var(--main-color);
+      background-color: #72B6CF;
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 2px 2px 0 var(--main-color);
+      background-color: #5C8BA8;
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 `;

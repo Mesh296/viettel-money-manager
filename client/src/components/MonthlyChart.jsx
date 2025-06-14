@@ -41,8 +41,7 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
         console.log('Transactions for chart:', transactions);
         
         // Chuẩn bị dữ liệu cho chart
-        const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 
-                         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+        const months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
         
         const incomeData = Array(12).fill(0);
         const expenseData = Array(12).fill(0);
@@ -66,6 +65,10 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
           });
         }
         
+        // Chuyển đổi dữ liệu sang đơn vị nghìn để hiển thị trên biểu đồ
+        const scaledIncomeData = incomeData.map(value => value / 1000);
+        const scaledExpenseData = expenseData.map(value => value / 1000);
+        
         // Tạo màu nền cho các cột, làm nổi bật tháng được chọn
         const incomeBackgroundColors = Array(12).fill('rgba(75, 192, 192, 0.7)');
         const expenseBackgroundColors = Array(12).fill('rgba(255, 99, 132, 0.7)');
@@ -82,14 +85,14 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
           datasets: [
             {
               label: 'Thu nhập',
-              data: incomeData,
+              data: scaledIncomeData,
               backgroundColor: incomeBackgroundColors,
               borderColor: 'rgb(75, 192, 192)',
               borderWidth: 1
             },
             {
               label: 'Chi tiêu',
-              data: expenseData,
+              data: scaledExpenseData,
               backgroundColor: expenseBackgroundColors,
               borderColor: 'rgb(255, 99, 132)',
               borderWidth: 1
@@ -146,7 +149,24 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
         bodyColor: '#FFFFFF',
         padding: 10,
         cornerRadius: 4,
-        displayColors: true
+        displayColors: true,
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            // Hiển thị giá trị thực (nhân 1000) trong tooltip
+            const value = context.raw * 1000;
+            const formattedValue = new Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              maximumFractionDigits: 0
+            }).format(value);
+            return `${label}: ${formattedValue}`;
+          }
+        }
+      },
+      // Remove any potential data labels
+      datalabels: {
+        display: false
       }
     },
     scales: {
@@ -157,18 +177,22 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
             size: 12,
             weight: 'bold'
           },
-          color: '#2D3748', 
-          callback: function(value) {
-            return new Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-              maximumFractionDigits: 0
-            }).format(value);
-          }
+          color: '#2D3748',
+          // Use stepSize to display only 0, 100, 200, etc.
+          stepSize: 100
         },
         grid: {
           color: 'rgba(0, 0, 0, 0.1)',
           lineWidth: 1
+        },
+        title: {
+          display: true,
+          text: '(nghìn VND)',
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#2D3748'
         }
       },
       x: {
@@ -177,10 +201,19 @@ const MonthlyChart = ({ year = null, selectedMonth = null }) => {
             size: 12,
             weight: 'bold'
           },
-          color: '#2D3748' // Màu chữ đậm hơn
+          color: '#2D3748'
         },
         grid: {
           display: false
+        },
+        title: {
+          display: true,
+          text: 'Tháng',
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#2D3748'
         }
       }
     }

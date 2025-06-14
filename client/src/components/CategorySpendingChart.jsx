@@ -8,13 +8,15 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { toast } from 'react-toastify';
 
 // Đăng ký các components cần thiết cho chart
 ChartJS.register(
   ArcElement,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 // Mảng các màu cho các danh mục
@@ -129,6 +131,13 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: {
+        right: 60,
+        bottom: 40,
+        left: 20
+      }
+    },
     plugins: {
       legend: {
         position: 'right',
@@ -152,7 +161,8 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
         },
         color: '#2D3748', // Màu chữ đậm hơn
         padding: {
-          bottom: 15
+
+          bottom: 35
         }
       },
       tooltip: {
@@ -180,6 +190,38 @@ const CategorySpendingChart = ({ month = null, year = null }) => {
             return `${label}: ${formattedValue}`;
           }
         }
+      },
+      // Thêm plugin datalabels để hiển thị phần trăm và đường chỉ
+      datalabels: {
+        color: '#000000',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderRadius: 4,
+        padding: {
+          top: 2,
+          bottom: 2,
+          left: 4,
+          right: 4
+        },
+        font: {
+          weight: 'bold',
+          size: 12
+        },
+        formatter: (value, context) => {
+          // Tính phần trăm
+          const datapoints = context.chart.data.datasets[0].data;
+          const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+          const percentage = (value / total * 100).toFixed(1) + '%';
+          return percentage;
+        },
+        display: function(context) {
+          // Chỉ hiển thị nhãn cho các phần chiếm từ 5% trở lên
+          const datapoints = context.chart.data.datasets[0].data;
+          const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+          return context.dataset.data[context.dataIndex] / total > 0.05;
+        },
+        offset: 15,
+        align: 'end',
+        anchor: 'end'
       }
     },
   };
