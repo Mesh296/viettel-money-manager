@@ -27,39 +27,24 @@ const buttonStyles = `
   text-transform: uppercase;
   background-color: #80B878;
   color: #000000;
-  border: 3px solid #000000;
-  box-shadow: 3px 3px 0 #000000;
+  border: 2px solid #cbd5e1;
   cursor: pointer;
   text-decoration: none;
   text-align: center;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: transform 0.1s;
   margin: 4px;
   image-rendering: pixelated;
   position: relative;
-  transform-style: preserve-3d;
+  border-radius: 8px;
   
   &:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 #000000;
     background-color: #B1D480;
   }
   
   &:active {
     transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 #000000;
     background-color: #658D78;
-  }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: #000000;
-    transform: translateZ(-1px);
   }
 `;
 

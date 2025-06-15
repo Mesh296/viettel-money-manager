@@ -316,10 +316,9 @@ const StyledForm = styled.form`
   .form-textarea,
   .form-datepicker {
     padding: 6px 10px;
-    border: 2px solid var(--main-color);
-    border-radius: 0;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
     background-color: white;
-    box-shadow: 2px 2px 0 var(--main-color);
     font-size: 14px;
     color: var(--font-color);
     width: 100%;
@@ -330,7 +329,6 @@ const StyledForm = styled.form`
     font-weight: 600;
     
     &:focus {
-      box-shadow: 3px 3px 0 var(--input-focus);
       border-color: var(--input-focus);
     }
     
@@ -410,26 +408,23 @@ const StyledForm = styled.form`
   
   .submit-button {
     padding: 8px 16px;
-    border-radius: 0;
-    border: 2px solid #000000;
+    border-radius: 8px;
+    border: 2px solid #52A8A8;
     background-color: #89D9D9;
     color: #000000;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 3px 3px 0 #000000;
     font-family: 'Courier New', monospace;
     min-width: 130px;
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 5px 5px 0 #000000;
       background-color: #72B6CF;
     }
     
     &:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 2px 2px 0 #000000;
       background-color: #5C8BA8;
     }
     

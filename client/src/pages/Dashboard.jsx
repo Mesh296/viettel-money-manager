@@ -154,7 +154,7 @@ const Dashboard = () => {
               <div className="section">
                 <div className="section-header">
                   <h2>Thống kê {statistics?.monthName || ''} năm {statistics?.year}</h2>
-                  <div className="info-icon" data-tooltip="Tổng hợp thu nhập, chi tiêu và số dư trong tháng">
+                  <div className="info-icon" data-tooltip="Tổng hợp thu nhập, chi tiêu và số dư trong tháng. Số dư là chênh lệch giữa thu nhập và chi tiêu, không phải là chênh lệch giữa ngân sách và chi tiêu">
                     <i className="hn hn-info-circle"></i>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ const StyledDashboard = styled.div`
   --font-color: #2D3748;
   --font-color-sub: #4A5568;
   --bg-color: #FFF;
-  --bg-color-alt: #FFF5E9;
+  --bg-color-alt: #ffffff;
   --main-color: #2D3748;
   --green-color: #48BB78;
   --red-color: #F56565;
@@ -382,8 +382,8 @@ const StyledDashboard = styled.div`
   .dashboard-card {
     background: var(--bg-color);
     border-radius: 8px;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px var(--main-color);
+    border: 2px solid #cbd5e1;
+   
     padding: 15px;
     margin-bottom: 15px;
     transition: transform 0.2s;

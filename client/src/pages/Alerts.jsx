@@ -315,7 +315,7 @@ const StyledAlerts = styled.div`
   --font-color: #000000;
   --font-color-sub: #464969;
   --bg-color: #FFF;
-  --bg-color-alt: #FFF5E9;
+  --bg-color-alt: #ffffff;
   --main-color: #000000;
   --green-color: #80B878;
   --red-color: #C7424F;
@@ -369,25 +369,23 @@ const StyledAlerts = styled.div`
   
   .btn {
     padding: 8px 16px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
     background-color: #89D9D9;
     color: var(--main-color);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 3px 3px 0 var(--main-color);
+    border-color: #52A8A8;
     font-family: 'Courier New', monospace;
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 5px 5px 0 var(--main-color);
       background-color: #72B6CF;
     }
     
     &:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 2px 2px 0 var(--main-color);
       background-color: #5C8BA8;
     }
     
@@ -398,7 +396,8 @@ const StyledAlerts = styled.div`
     
     &.btn-danger {
       background-color: #C7424F;
-      border-color: var(--main-color);
+      border-color: #8b2e37;
+      color: #ffffff;
       
       &:hover:not(:disabled) {
         background-color: #E06B51;
@@ -415,10 +414,10 @@ const StyledAlerts = styled.div`
   }
   
   .alerts-card {
-    background-color: var(--bg-color);
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px 0 var(--main-color);
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+  
     padding: 20px;
     margin-bottom: 20px;
   }
@@ -442,15 +441,15 @@ const StyledAlerts = styled.div`
     gap: 16px;
     
     .alert-item {
-      border: 2px solid var(--main-color);
-      border-radius: 0;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
       position: relative;
       background-color: #FFFFFF;
-      box-shadow: 4px 4px 0 var(--main-color);
+    
       
       .alert-header {
         display: flex;
@@ -460,12 +459,12 @@ const StyledAlerts = styled.div`
         .alert-type {
           display: inline-block;
           padding: 4px 12px;
-          border-radius: 0;
+          border-radius: 8px;
           background-color: var(--yellow-color);
           color: var(--main-color);
           font-weight: 600;
           font-size: 14px;
-          border: 2px solid var(--main-color);
+          border: 2px solid #cbd5e1;
         }
         
         .alert-date {
@@ -488,27 +487,27 @@ const StyledAlerts = styled.div`
         display: flex;
         justify-content: flex-end;
         
-        .btn-delete {
+                  .btn-delete {
           padding: 6px 12px;
           font-size: 14px;
           background-color: #C7424F;
-          border: 2px solid var(--main-color);
-          color: var(--main-color);
-          border-radius: 0;
+          border: 2px solid #8b2e37;
+          color: #ffffff;
+          border-radius: 8px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
-          box-shadow: 2px 2px 0 var(--main-color);
+     
           
           &:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 3px 3px 0 var(--main-color);
+   
             background-color: #E06B51;
           }
           
           &:active:not(:disabled) {
             transform: translateY(1px);
-            box-shadow: 1px 1px 0 var(--main-color);
+  
             background-color: #942C4B;
           }
           
@@ -543,25 +542,25 @@ const StyledAlerts = styled.div`
   .settings-link {
     display: inline-block;
     padding: 8px 16px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #52A8A8;
     background-color: #89D9D9;
     color: var(--main-color);
     font-weight: 600;
     text-decoration: none;
     transition: all 0.2s;
-    box-shadow: 2px 2px 0 var(--main-color);
+
     font-family: 'Courier New', monospace;
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 4px 4px 0 var(--main-color);
+
       background-color: #72B6CF;
     }
     
     &:active {
       transform: translateY(1px);
-      box-shadow: 1px 1px 0 var(--main-color);
+
     }
   }
   
@@ -569,7 +568,7 @@ const StyledAlerts = styled.div`
     background-color: var(--bg-color);
     border-radius: 0;
     border: 2px solid var(--main-color);
-    box-shadow: 4px 4px 0 var(--main-color);
+
     padding: 20px;
     margin-bottom: 20px;
     

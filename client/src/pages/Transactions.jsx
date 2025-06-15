@@ -93,7 +93,7 @@ const StyledTransactions = styled.div`
   --font-color: #000000;
   --font-color-sub: #464969;
   --bg-color: #FFF;
-  --bg-color-alt: #FFF5E9;
+  --bg-color-alt: #ffffff;
   --main-color: #000000;
   --green-color: #80B878;
   --red-color: #C7424F;
@@ -124,10 +124,10 @@ const StyledTransactions = styled.div`
   }
   
   .transaction-card {
-    background: var(--bg-color);
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px 0 var(--main-color);
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+   
     padding: 20px;
     margin-bottom: 20px;
     transition: transform 0.2s;
@@ -179,26 +179,26 @@ const StyledTransactions = styled.div`
   .filter-btn {
     padding: 8px 16px;
     border-radius: 0;
-    border: 2px solid var(--main-color);
+    border: 2px solid #cbd5e1;
     background-color: #fff;
     font-weight: 600;
     color: var(--main-color);
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 2px 2px 0 var(--main-color);
+
     font-family: 'Courier New', monospace;
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 4px 4px 0 var(--main-color);
+      box-shadow: 4px 4px 0 #cbd5e1;
     }
     
     &.active {
       background-color: #89D9D9;
       color: var(--main-color);
-      border-color: var(--main-color);
+      border-color: #52A8A8;
       transform: translateY(-1px);
-      box-shadow: 3px 3px 0 var(--main-color);
+      box-shadow: 3px 3px 0 #52A8A8;
     }
     
     &.income.active {
@@ -208,7 +208,8 @@ const StyledTransactions = styled.div`
     
     &.expense.active {
       background-color: var(--red-color);
-      color: var(--main-color);
+      color: #ffffff;
+      border-color: #8b2e37;
     }
   }
 `;

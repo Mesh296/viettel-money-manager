@@ -501,9 +501,10 @@ const StyledTransactionList = styled.div`
   
   .table-container {
     overflow-x: auto;
-    border: 2px solid #000;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
     margin-top: 16px;
-    box-shadow: 4px 4px 0 #000;
+    background-color: #ffffff;
   }
   
   .transaction-table {
@@ -514,8 +515,8 @@ const StyledTransactionList = styled.div`
     th, td {
       padding: 12px;
       text-align: left;
-      border-bottom: 2px solid #000000;
-      border-right: 2px solid #000000;
+      border-bottom: 2px solid #cbd5e1;
+      border-right: 2px solid #cbd5e1;
       font-family: 'Courier New', monospace;
       font-weight: 600;
     }
@@ -542,8 +543,8 @@ const StyledTransactionList = styled.div`
     .transaction-type {
       display: inline-block;
       padding: 4px 8px;
-      border-radius: 0;
-      border: 2px solid #000000;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
       font-weight: 600;
       text-align: center;
       background-color: #ffffff;
@@ -577,42 +578,41 @@ const StyledTransactionList = styled.div`
   
   .edit-button, .delete-button {
     padding: 4px 10px;
-    border-radius: 0;
+    border-radius: 8px;
     margin: 0 4px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    border: 2px solid #000000;
+    border: 2px solid #cbd5e1;
     font-family: 'Courier New', monospace;
-    box-shadow: 2px 2px 0 #000000;
+ 
     color: #000000;
   }
   
   .edit-button {
     background-color: #89D9D9;
+    border-color: #52A8A8;
     
     &:hover {
       background-color: #72B6CF;
-      box-shadow: 3px 3px 0 #000000;
     }
     
     &:active {
       transform: translateY(1px);
-      box-shadow: 1px 1px 0 #000000;
     }
   }
   
   .delete-button {
     background-color: #C7424F;
+    border-color: #8b2e37;
+    color: #ffffff;
     
     &:hover {
       background-color: #E06B51;
-      box-shadow: 3px 3px 0 #000000;
     }
     
     &:active {
       transform: translateY(1px);
-      box-shadow: 1px 1px 0 #000000;
     }
   }
   
@@ -626,24 +626,24 @@ const StyledTransactionList = styled.div`
   
   .pagination-button {
     padding: 8px 12px;
-    border: 2px solid #000000;
+    border: 2px solid #52A8A8;
     background-color: #89D9D9;
     color: #000000;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s;
-    box-shadow: 2px 2px 0 #000000;
+    box-shadow: 2px 2px 0 #52A8A8;
     font-family: 'Courier New', monospace;
     
     &:hover:not(.disabled) {
       transform: translateY(-2px);
-      box-shadow: 3px 3px 0 #000000;
+      box-shadow: 3px 3px 0 #52A8A8;
       background-color: #72B6CF;
     }
     
     &:active:not(.disabled) {
       transform: translateY(1px);
-      box-shadow: 1px 1px 0 #000000;
+      box-shadow: 1px 1px 0 #52A8A8;
       background-color: #5C8BA8;
     }
     
@@ -664,25 +664,25 @@ const StyledTransactionList = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #000000;
+    border: 2px solid #52A8A8;
     background-color: #FFFFFF;
     color: #000000;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 2px 2px 0 #000000;
+
     font-family: 'Courier New', monospace;
     font-weight: 600;
     
     &:hover:not(.active) {
       transform: translateY(-2px);
-      box-shadow: 3px 3px 0 #000000;
+      box-shadow: 3px 3px 0 #52A8A8;
       background-color: #F0F0F0;
     }
     
     &.active {
       background-color: #89D9D9;
       color: #000000;
-      border-color: #000000;
+      border-color: #52A8A8;
     }
   }
   

@@ -27,25 +27,22 @@ const buttonStyles = `
   text-transform: uppercase;
   background-color: #80B878;
   color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0 #000000;
+  border: 2px solid #cbd5e1;
   cursor: pointer;
   text-decoration: none;
   text-align: center;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: transform 0.1s;
   margin: 4px;
   image-rendering: pixelated;
-  border-radius: 0;
+  border-radius: 8px;
   
   &:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 #000000;
     background-color: #B1D480;
   }
   
   &:active {
     transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 #000000;
     background-color: #658D78;
   }
 `;

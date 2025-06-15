@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
 import PixelButton from './PixelButton';
+import cuteCat from '../assets/cute-cat-white.gif';
+
 
 const Sidebar = () => {
   const { isAuthenticated, logout, user } = useAuth();
@@ -22,7 +24,7 @@ const Sidebar = () => {
           <>
             <div className="user-profile">
               <div className="avatar-container">
-                <i className="hn hn-github"></i>
+              <img src={cuteCat} alt="user avater" style={{width: "50px", height: "50px"}}/>
               </div>
               <div className="user-info">
                 <p className="user-name">{user?.name || 'User'}</p>
@@ -97,9 +99,9 @@ const Sidebar = () => {
 };
 
 const StyledSidebar = styled.aside`
-  background-color: #FFF5E9;
+  background-color: #ffffff;
   height: 100%;
-  border-right: 2px solid #000000;
+  border-right: 2px solid #cbd5e1;
   display: flex;
   flex-direction: column;
   box-shadow: none;
@@ -116,7 +118,7 @@ const StyledSidebar = styled.aside`
   .logo-container {
     margin-bottom: 28px;
     padding-bottom: 20px;
-    border-bottom: 2px solid #000000;
+    border-bottom: 2px solid #cbd5e1;
   }
   
   .logo {
@@ -134,15 +136,15 @@ const StyledSidebar = styled.aside`
     align-items: center;
     padding: 16px;
     background-color: #ffffff;
-    border: 2px solid #000000;
-    border-radius: 0;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
     margin-bottom: 24px;
   }
   
   .avatar-container {
     width: 40px;
     height: 40px;
-    border: 2px solid #000000;
+
     background: #ffffff;
     display: flex;
     align-items: center;
@@ -206,11 +208,11 @@ const StyledSidebar = styled.aside`
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    border-radius: 0;
+    border-radius: 8px;
     text-decoration: none;
     color: #000000;
     font-weight: 500;
-    border: 2px solid #000000;
+    border: 2px solid #cbd5e1;
     transition: all 0.2s ease;
     font-family: 'Courier New', monospace;
     background-color: #ffffff;
@@ -236,24 +238,21 @@ const StyledSidebar = styled.aside`
     justify-content: center;
     margin-top: 24px;
     padding-top: 16px;
-    border-top: 2px solid #000000;
+    border-top: 2px solid #cbd5e1;
   }
   
   .logout-button {
     background-color: #C7424F !important;
-    border-color: #000000 !important;
-    color: #000000 !important;
-    box-shadow: 4px 4px 0 #000000 !important;
+    border-color: #8b2e37 !important;
+    color: #ffffff !important;
     
     &:hover {
       background-color: #E06B51 !important;
       transform: translate(-2px, -2px) !important;
-      box-shadow: 6px 6px 0 #000000 !important;
     }
     
     &:active {
       transform: translate(2px, 2px) !important;
-      box-shadow: 2px 2px 0 #000000 !important;
       background-color: #942C4B !important;
     }
   }

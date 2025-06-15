@@ -942,7 +942,7 @@ const StyledBudgets = styled.div`
   --yellow-color: #F2A561;
   
   padding: 20px;
-  background-color: #FFF5E9;
+  background-color: #ffffff;
   min-height: 100%;
   font-family: 'Courier New', monospace;
   
@@ -956,7 +956,7 @@ const StyledBudgets = styled.div`
     font-weight: 900;
     color: var(--main-color);
     margin-bottom: 24px;
-    border-bottom: 2px solid #000000;
+    border-bottom: 2px solid #cbd5e1;
     padding-bottom: 12px;
   }
   
@@ -967,10 +967,10 @@ const StyledBudgets = styled.div`
     align-items: stretch;
     justify-content: stretch;
     width: 100%;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px 0 var(--main-color);
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
     overflow: hidden;
-    background-color: var(--bg-color);
+    background-color: #ffffff;
     @media (max-width: 900px) {
       flex-direction: column;
       gap: 0;
@@ -989,8 +989,7 @@ const StyledBudgets = styled.div`
     gap: 0;
     justify-content: stretch;
     @media (max-width: 900px) {
-      border: 2px solid var(--main-color);
-      box-shadow: 4px 4px 0 var(--main-color);
+      border: 2px solid #cbd5e1;
     }
   }
   .budget-left-col .budget-card {
@@ -1015,11 +1014,10 @@ const StyledBudgets = styled.div`
     flex-direction: column;
     align-items: stretch;
     justify-content: stretch;
-    border-left: 2px solid var(--main-color);
-    background-color: var(--bg-color);
+    border-left: 2px solid #cbd5e1;
+    background-color: #ffffff;
     @media (max-width: 900px) {
-      border: 2px solid var(--main-color);
-      box-shadow: 4px 4px 0 var(--main-color);
+      border: 2px solid #cbd5e1;
       margin-top: 16px;
     }
   }
@@ -1034,9 +1032,8 @@ const StyledBudgets = styled.div`
     margin: 0;
     border: none;
     border-radius: 0;
-    box-shadow: none;
     padding: 20px;
-    background-color: var(--bg-color);
+    background-color: #ffffff;
   }
   .card-title {
     font-size: 18px;
@@ -1148,10 +1145,10 @@ const StyledBudgets = styled.div`
   }
   
   .budget-table-container {
-    border: 2px solid #000;
+    border: 2px solid #cbd5e1;
     margin-top: 16px;
-    box-shadow: 4px 4px 0 #000;
     overflow-x: auto;
+    border-radius: 8px;
   }
   
   .budget-table {
@@ -1163,8 +1160,8 @@ const StyledBudgets = styled.div`
     th, td {
       padding: 12px;
       text-align: left;
-      border-bottom: 2px solid #000000;
-      border-right: 2px solid #000000;
+      border-bottom: 2px solid #cbd5e1;
+      border-right: 2px solid #cbd5e1;
     }
     
     th {
@@ -1192,24 +1189,21 @@ const StyledBudgets = styled.div`
   
   .delete-btn {
     padding: 6px 12px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #8b2e37;
     background-color: var(--red-color);
-    color: var(--main-color);
+    color: #ffffff;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 2px 2px 0 var(--main-color);
     font-family: 'Courier New', monospace;
     
     &:hover:not(:disabled) {
       background-color: #E06B51;
-      box-shadow: 3px 3px 0 var(--main-color);
     }
     
     &:active:not(:disabled) {
       transform: translateY(1px);
-      box-shadow: 1px 1px 0 var(--main-color);
     }
     
     &:disabled {
@@ -1266,10 +1260,9 @@ const StyledBudgets = styled.div`
   
   .select-input {
     padding: 8px 12px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
-    box-shadow: 2px 2px 0 var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+    background-color: #ffffff;
     font-size: 14px;
     font-weight: 600;
     color: var(--font-color);
@@ -1339,10 +1332,9 @@ const StyledBudgets = styled.div`
   }
   
   .budget-card {
-    background: var(--bg-color);
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    box-shadow: 4px 4px 0 var(--main-color);
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
     padding: 20px;
     margin-bottom: 20px;
     transition: transform 0.2s;
@@ -1375,10 +1367,9 @@ const StyledBudgets = styled.div`
   
   .text-input, .select-input {
     padding: 8px 12px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
-    background-color: var(--bg-color);
-    box-shadow: 2px 2px 0 var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+    background-color: #ffffff;
     font-size: 14px;
     font-weight: 600;
     color: var(--font-color);
@@ -1392,25 +1383,22 @@ const StyledBudgets = styled.div`
   
   .submit-btn, .action-btn {
     padding: 8px 16px;
-    border-radius: 0;
-    border: 2px solid var(--main-color);
+    border-radius: 8px;
+    border: 2px solid #52A8A8;
     background-color: #89D9D9;
     color: var(--main-color);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 3px 3px 0 var(--main-color);
     font-family: 'Courier New', monospace;
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 5px 5px 0 var(--main-color);
       background-color: #72B6CF;
     }
     
     &:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 2px 2px 0 var(--main-color);
       background-color: #5C8BA8;
     }
     
