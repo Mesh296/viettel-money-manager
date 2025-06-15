@@ -1,6 +1,7 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
-const { Category } = require('../../models');
+const { Category, Budget, UserCategory, Transaction } = require('../../models');
+const { Op } = require('sequelize');
 const transactionService = require('../transactions');
 const categoryService = require('../categories');
 const { getCache, setCache, deleteCache } = require('../../providers/redis');
@@ -364,11 +365,7 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
                 }
               }, conversation);
               
-              // Add to conversation history
-              conversation.history.push(
-                { role: 'user', content: message },
-                { role: 'assistant', content: "Tạo giao dịch thành công" }
-              );
+              // The processIntent function now handles the conversation history update
               
               return result;
             } catch (processError) {
@@ -400,6 +397,9 @@ Bạn là trợ lý AI quản lý tài chính, hỗ trợ người dùng bằng 
 async function processIntent(userId, aiResponse, conversation) {
   const { intent, response, data } = aiResponse;
 
+  // Log conversation history
+  console.log('DEBUG - Current conversation history:', JSON.stringify(conversation.history, null, 2));
+  
   switch (intent) {
     case 'create_transaction': {
       const { amount, categoryId, type, date, note } = data;
@@ -418,10 +418,186 @@ async function processIntent(userId, aiResponse, conversation) {
           note || ''
         );
         
+        // Nếu type là "expense" (chi tiêu), kiểm tra xem giao dịch có vượt ngân sách không
+        let budgetAlert = null;
+        if (type === 'expense' && result) {
+          // Lấy thông tin của danh mục
+          const category = await Category.findByPk(categoryId);
+          const categoryName = category ? category.name : 'Không xác định';
+          
+          // Kiểm tra ngân sách tháng
+          const currentDate = new Date();
+          let transactionMonth, transactionYear;
+          
+          if (date) {
+            const parts = date.split('-');
+            if (parts.length === 3) {
+              transactionMonth = parseInt(parts[1], 10);
+              transactionYear = parseInt(parts[2], 10);
+            }
+          } else {
+            transactionMonth = currentDate.getMonth() + 1; // 1-12
+            transactionYear = currentDate.getFullYear();
+          }
+          
+          // Create the transaction date object once
+          const transactionDay = parseInt(date ? date.split('-')[0] : new Date().getDate());
+          const transactionDate = new Date(transactionYear, transactionMonth - 1, transactionDay);
+          console.log(`DEBUG - Transaction date: ${transactionDate.toISOString()}`);
+          
+          // Kiểm tra ngân sách cho giao dịch này
+          try {
+            console.log('DEBUG - Starting budget check for userId:', userId);
+            // 1. Kiểm tra ngân sách tổng tháng
+            const monthNames = [
+              'January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            const monthStr = `${monthNames[transactionMonth - 1]} ${transactionYear}`;
+            console.log(`DEBUG - Looking for budget with month=${monthStr}`);
+            
+            const budget = await Budget.findOne({
+              where: { 
+                userId, 
+                month: monthStr 
+              }
+            });
+            
+            console.log('DEBUG - Budget found:', budget ? JSON.stringify(budget) : 'null');
+            
+            if (budget) {
+              // Tính tổng chi tiêu trong tháng
+              const startDate = new Date(transactionYear, transactionMonth - 1, 1);
+              const endDate = new Date(transactionYear, transactionMonth, 0);
+              
+              console.log(`DEBUG - Calculating expenses from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+              
+              const totalExpenses = await Transaction.sum('amount', {
+                where: { 
+                  userId,
+                  type: 'expense',
+                  date: {
+                    [Op.between]: [startDate, endDate]
+                  }
+                }
+              });
+              
+              // Cộng thêm số tiền của giao dịch hiện tại nếu không nằm trong khoảng thời gian tính toán
+              let finalTotalExpenses = totalExpenses;
+              if (!(transactionDate >= startDate && transactionDate <= endDate)) {
+                finalTotalExpenses += amount;
+              }
+              
+              console.log(`DEBUG - Total expenses: ${totalExpenses}, With current transaction: ${finalTotalExpenses}, Budget amount: ${budget.budget}`);
+              
+              // Kiểm tra nếu tổng chi tiêu vượt ngân sách
+              if (budget.budget > 0 && finalTotalExpenses > budget.budget) {
+                const formattedBudget = new Intl.NumberFormat('vi-VN').format(budget.budget);
+                const monthText = (transactionMonth === currentDate.getMonth() + 1 && transactionYear === currentDate.getFullYear()) 
+                  ? "tháng này" 
+                  : `tháng ${transactionMonth}/${transactionYear}`;
+                
+                budgetAlert = `❗️ CẢNH BÁO ❗️\nChi tiêu ${monthText} đã vượt ngân sách ${formattedBudget}₫\n(Tổng chi tiêu: ${new Intl.NumberFormat('vi-VN').format(finalTotalExpenses)}₫)`;
+                console.log('DEBUG - Monthly budget alert created:', budgetAlert);
+              } else {
+                console.log(`DEBUG - No monthly budget alert: Budget is ${budget.budget}, expenses are ${finalTotalExpenses}`);
+              }
+            } else {
+              console.log('DEBUG - No monthly budget found for this month/user');
+            }
+            
+            // 2. Kiểm tra ngân sách theo danh mục
+            console.log(`DEBUG - Looking for category budget for categoryId=${categoryId}`);
+            
+            const userCategory = await UserCategory.findOne({
+              where: { 
+                userId,
+                categoryId,
+                month: monthStr  // Sử dụng cùng định dạng tháng đã sửa ở trên
+              }
+            });
+            
+            console.log('DEBUG - Category budget found:', userCategory ? JSON.stringify(userCategory) : 'null');
+            
+            if (userCategory && userCategory.budget_limit > 0) {
+              // Tính chi tiêu cho danh mục này trong tháng
+              const startDate = new Date(transactionYear, transactionMonth - 1, 1);
+              const endDate = new Date(transactionYear, transactionMonth, 0);
+              
+              console.log(`DEBUG - Calculating category expenses from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+              
+              const categoryExpense = await Transaction.sum('amount', {
+                where: { 
+                  userId,
+                  categoryId,
+                  type: 'expense',
+                  date: {
+                    [Op.between]: [startDate, endDate]
+                  }
+                }
+              });
+              
+              // Cộng thêm số tiền của giao dịch hiện tại nếu cùng danh mục và không nằm trong khoảng thời gian tính toán
+              let finalCategoryExpense = categoryExpense;
+              if (!(transactionDate >= startDate && transactionDate <= endDate)) {
+                finalCategoryExpense += amount;
+              }
+              
+              console.log(`DEBUG - Category expenses: ${categoryExpense}, With current transaction: ${finalCategoryExpense}, Category budget: ${userCategory.budget_limit}`);
+              
+              // Kiểm tra nếu chi tiêu danh mục vượt ngân sách danh mục
+              if (finalCategoryExpense > userCategory.budget_limit) {
+                const formattedBudget = new Intl.NumberFormat('vi-VN').format(userCategory.budget_limit);
+                const monthText = (transactionMonth === currentDate.getMonth() + 1 && transactionYear === currentDate.getFullYear()) 
+                  ? "tháng này" 
+                  : `tháng ${transactionMonth}/${transactionYear}`;
+                
+                // Nếu đã có cảnh báo tổng ngân sách, thêm vào sau dấu xuống dòng
+                if (budgetAlert) {
+                  budgetAlert += `\n\n❗️ CẢNH BÁO ❗️\nChi tiêu danh mục "${categoryName}" ${monthText} đã vượt ngân sách ${formattedBudget}₫\n(Chi tiêu danh mục: ${new Intl.NumberFormat('vi-VN').format(finalCategoryExpense)}₫)`;
+                } else {
+                  budgetAlert = `❗️ CẢNH BÁO ❗️\nChi tiêu danh mục "${categoryName}" ${monthText} đã vượt ngân sách ${formattedBudget}₫\n(Chi tiêu danh mục: ${new Intl.NumberFormat('vi-VN').format(finalCategoryExpense)}₫)`;
+                }
+                console.log('DEBUG - Category budget alert created:', budgetAlert);
+              } else {
+                console.log(`DEBUG - No category budget alert: Budget is ${userCategory.budget_limit}, expenses are ${finalCategoryExpense}`);
+              }
+            } else {
+              console.log('DEBUG - No category budget found for this category/user');
+            }
+          } catch (budgetError) {
+            console.error('Error checking budget alerts:', budgetError);
+          }
+        }
+        
+        // Thêm cảnh báo ngân sách vào phản hồi (nếu có)
+        let replyMessage;
+        if (budgetAlert) {
+          // Thêm thông báo thành công ở đầu
+          const successMessage = `✅ Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫ thành công.`;
+          replyMessage = `${successMessage}\n\n${budgetAlert}`;
+        } else {
+          replyMessage = `✅ Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫ thành công.`;
+        }
+        console.log('DEBUG - Final reply message:', replyMessage);
+        
+        // Cập nhật conversation history ở đây để phù hợp với nội dung bot trả về
+        conversation.history.push(
+          { role: 'user', content: `Tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫` },
+          { role: 'assistant', content: replyMessage }
+        );
+        
+        // Trim history
+        if (conversation.history.length > 10) {
+          conversation.history = conversation.history.slice(-10);
+        }
+        
+        // Cập nhật vào Redis
+        const redisKey = `cache:chatbot:conversation:${userId}`;
+        await setCache(redisKey, conversation, CONVERSATION_EXPIRY);
+        
         return {
-          reply: result ? 
-            `✅ Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫ thành công.` :
-            `❌ Lỗi: Không thể tạo giao dịch`,
+          reply: result ? replyMessage : `❌ Lỗi: Không thể tạo giao dịch`,
           toast: result ? {
             type: 'success',
             message: `Đã tạo ${type === 'income' ? 'thu nhập' : 'chi tiêu'} ${amount.toLocaleString('vi-VN')} ₫`
