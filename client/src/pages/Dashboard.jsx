@@ -7,6 +7,7 @@ import MonthlyChart from '../components/MonthlyChart';
 import CategorySpendingChart from '../components/CategorySpendingChart';
 import CategoryTrendChart from '../components/CategoryTrendChart';
 import AlertWidget from '../components/AlertWidget';
+import QuoteBanner from '../components/QuoteBanner';
 import MainLayout from '../components/MainLayout';
 import styled from 'styled-components';
 
@@ -110,7 +111,10 @@ const Dashboard = () => {
     <MainLayout>
       <StyledDashboard>
         <div className="dashboard-container">
-          <h1 className="page-title">Dashboard</h1>
+          <div className="title-row">
+            <h1 className="page-title">Dashboard</h1>
+            <QuoteBanner />
+          </div>
           
           {/* Bộ chọn tháng và năm */}
           <div className="date-selector-container">
@@ -291,11 +295,18 @@ const StyledDashboard = styled.div`
     margin: 0 auto;
   }
   
+  .title-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
   .page-title {
     font-size: 28px;
     font-weight: 900;
     color: var(--main-color);
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    padding-right: 20px;
   }
   
   .date-selector-container {
@@ -581,6 +592,13 @@ const StyledDashboard = styled.div`
     
     .stat-item {
       width: 100%;
+    }
+    
+    .title-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
     }
     
     .dashboard-card {
